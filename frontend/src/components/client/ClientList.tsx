@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Plus, Search, CircleEllipsisIcon } from "lucide-react";
+import React, { useState } from "react";
+import { Plus, Search, CircleEllipsisIcon, Bell } from "lucide-react";
 import axios from "axios";
 import AddClientModal from "./AddClientModal";
 import UpdateClientModal from "./UpdateClientModal";
@@ -7,7 +7,6 @@ import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import { BACKEND_URL } from "../../backendUrl";
 import type { Client } from "../../types";
 import { useClients } from "../../context/clientContext";
-import { useUser } from "../../context/authContext";
 
 interface RemarkModalProps {
   isOpen: boolean;
@@ -21,6 +20,7 @@ interface ClientRowProps {
   onUpdate: (client: Client) => void;
   onDelete: (client: Client) => void;
   onShowRemark: (client: Client) => void;
+  onRemind: (client: Client) => void;
 }
 
 const ClientRow: React.FC<ClientRowProps> = ({
@@ -28,6 +28,7 @@ const ClientRow: React.FC<ClientRowProps> = ({
   onUpdate,
   onDelete,
   onShowRemark,
+  onRemind,
 }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -43,7 +44,8 @@ const ClientRow: React.FC<ClientRowProps> = ({
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -102,6 +104,15 @@ const ClientRow: React.FC<ClientRowProps> = ({
             >
               Remark
             </button>
+            <button
+              onClick={() => {
+                onRemind(client);
+                setMenuOpen(false);
+              }}
+              className="px-4 py-2 hover:bg-gray-100 w-full text-left flex items-center"
+            >
+              <Bell size={16} className="mr-2" /> Remind me
+            </button>
           </div>
         )}
       </td>
@@ -110,21 +121,12 @@ const ClientRow: React.FC<ClientRowProps> = ({
 };
 
 const ClientList: React.FC = () => {
-  const { clients, setClients } = useClients();
+  const { clients, loading, setClients } = useClients();
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [remarkClient, setRemarkClient] = useState<Client | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { user } = useUser();
-
-  useEffect(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, [clients]);
 
   const filteredClients = clients.filter(
     (client) =>
@@ -145,6 +147,20 @@ const ClientList: React.FC = () => {
     setRemarkClient(client);
   };
 
+  const handleRemind = async (client: Client) => {
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/customer/reminder`,
+        { id: client.id },
+        { headers: { authorization: localStorage.getItem("token") } }
+      );
+      alert("Reminder sent successfully!");
+    } catch (err) {
+      alert("Failed to send reminder");
+      console.error("Failed to send reminder:", err);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!clientToDelete) return;
     try {
@@ -162,12 +178,12 @@ const ClientList: React.FC = () => {
     }
   };
 
-  console.log(user);
-
-  if(isLoading) {
-    return <div className="flex justify-center items-center h-screen">
-      <p className="text-lg font-semibold">Loading clients...</p>
-    </div>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-lg font-semibold">Loading clients...</p>
+      </div>
+    );
   }
 
   return (
@@ -227,6 +243,7 @@ const ClientList: React.FC = () => {
                   onUpdate={handleUpdate}
                   onDelete={handleDelete}
                   onShowRemark={handleShowRemark}
+                  onRemind={handleRemind}
                 />
               ))}
             </tbody>

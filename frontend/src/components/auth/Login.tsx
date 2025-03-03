@@ -4,39 +4,46 @@ import { LogIn } from 'lucide-react';
 import axios from 'axios';
 import { BACKEND_URL } from '../../backendUrl';
 import { useUser } from '../../context/authContext';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state
   const { user, setUser } = useUser();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
-    const loginData = {
-      email,
-      password,
-      companyName,
-    };
+    const loginData = { email, password, companyName };
 
     try {
       const response = await axios.post(`${BACKEND_URL}/api/users/login`, loginData);
       if(response.data.status) {
-        setUser({email: email, role: response.data.role});
+        setUser({ email: email, role: response.data.role });
         localStorage.setItem("token", response.data.token);
         navigate("/");
       } else {
-        alert("there is error while login");
+        toast.error(response.data.error || "There was an error while logging in.");
       }
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error('Error:', error);
+      toast.error(
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "An unexpected error occurred."
+      );
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
-  useEffect(()=>{
-    if(user && user.email != undefined) {
+  useEffect(() => {
+    if (user && user.email !== undefined) {
       navigate('/');
     }
   }, [user, navigate]);
@@ -113,12 +120,16 @@ const Login = () => {
             />
           </div>
 
-        
           <button
             type="submit"
-            className="w-full py-2 px-4 border border-transparent rounded-lg shadow-md text-white font-semibold bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm transition duration-200"
+            className="w-full py-2 px-4 border border-transparent rounded-lg shadow-md text-white font-semibold bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm transition duration-200 flex justify-center items-center"
+            disabled={loading}
           >
-            Sign In
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
       </div>

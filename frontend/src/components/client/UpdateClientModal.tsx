@@ -1,4 +1,3 @@
-// UpdateClientModal.tsx
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast'; 
@@ -21,6 +20,7 @@ const UpdateClientModal: React.FC<UpdateClientModalProps> = ({ isOpen, onClose, 
     remark: client.remark || '',
     companyName: client.companyName,
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setFormData({
@@ -34,7 +34,7 @@ const UpdateClientModal: React.FC<UpdateClientModalProps> = ({ isOpen, onClose, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setIsLoading(true);
     try {
       const response = await axios.put(`${BACKEND_URL}/api/customer/update`, { id: client.id, ...formData }, {
         headers: {
@@ -56,6 +56,8 @@ const UpdateClientModal: React.FC<UpdateClientModalProps> = ({ isOpen, onClose, 
     } catch (error) {
       console.error('Error updating client:', error);
       toast.error('An unexpected error occurred.');
+    } finally {
+      setIsLoading(true);
     }
   };
 
@@ -108,9 +110,14 @@ const UpdateClientModal: React.FC<UpdateClientModalProps> = ({ isOpen, onClose, 
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg"
+              className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg flex items-center justify-center"
+              disabled={isLoading}
             >
-              Update Client
+              {isLoading ? (
+                <svg className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full" viewBox="0 0 24 24"></svg>
+              ) : (
+                'Update Client'
+              )}
             </button>
           </div>
         </form>

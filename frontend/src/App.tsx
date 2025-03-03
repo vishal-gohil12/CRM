@@ -85,6 +85,7 @@ const Logout = ({clearUser }: { clearUser: () => void }) => {
   const navigate = useNavigate();
   
   useEffect(() => {
+    localStorage.removeItem("token");
       clearUser(); 
       navigate("/login"); 
   }, [clearUser, navigate]);
