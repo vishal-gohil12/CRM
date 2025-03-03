@@ -1,1 +1,1 @@
-export const BACKEND_URL = "http://localhost:5040"
+export const BACKEND_URL = "https://crm-ct5z.onrender.com"
