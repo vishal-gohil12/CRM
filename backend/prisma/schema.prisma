@@ -44,6 +44,7 @@ model Customer {
   phone     String?
   remark   String?
   transactions Transaction[]
+  reminder Reminder[]
   createdAt DateTime @default(now())
 }
 
@@ -56,6 +57,16 @@ model Transaction {
   amount         Decimal
   status        TransactionStatus @default(pending)
   createdAt      DateTime @default(now())
+}
+
+model Reminder {
+  id          String    @id @default(uuid())
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId  String
+  datetime    DateTime
+  message     String
+  sent        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
 }
 
 enum Role {

@@ -6,6 +6,8 @@ import { companyRotue } from "./routes/companyRoute";
 import { userRoute } from "./routes/userRotue";
 import { customerRoute } from "./routes/customerRoute";
 import { transactionRouter } from "./routes/transactionsRoute";
+import { reminderRoute } from "./routes/reminderRoute";
+import "../src/controller/scheduleReminders";
 
 config();
 const app = express();
@@ -21,6 +23,7 @@ app.use('/api/company', companyRotue);
 app.use('/api/', userRoute);
 app.use('/api/customer', customerRoute);
 app.use('/api/transactions', transactionRouter);
+app.use('/api/reminder', reminderRoute);
 
 app.get('/', (req, res)=> {
     res.send("hello world");
