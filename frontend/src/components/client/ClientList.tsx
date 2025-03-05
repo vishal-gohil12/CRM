@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Plus, Search, CircleEllipsisIcon, Bell } from "lucide-react";
 import axios from "axios";
 import AddClientModal from "./AddClientModal";
@@ -7,6 +7,7 @@ import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import { BACKEND_URL } from "../../backendUrl";
 import type { Client } from "../../types";
 import { useClients } from "../../context/clientContext";
+import { ReminderModal } from "./ReminderModal";
 
 interface RemarkModalProps {
   isOpen: boolean;
@@ -31,9 +32,9 @@ const ClientRow: React.FC<ClientRowProps> = ({
   onRemind,
 }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const menuRef = React.useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
         menuRef.current &&
@@ -51,10 +52,16 @@ const ClientRow: React.FC<ClientRowProps> = ({
   return (
     <tr className="hover:bg-gray-50">
       <td className="py-3 px-4">
-        <div>
-          <div className="font-medium text-sm">{client.name}</div>
-          <div className="text-xs text-gray-500 md:hidden">
-            {client.companyName}
+        <div className="flex items-center">
+          {/* Show a small reminder icon if the client has a reminder */}
+          {client.reminder && (
+            <Bell size={16} className="text-red-500 mr-1" xlinkTitle="Reminder scheduled" />
+          )}
+          <div>
+            <div className="font-medium text-sm">{client.name}</div>
+            <div className="text-xs text-gray-500 md:hidden">
+              {client.companyName}
+            </div>
           </div>
         </div>
       </td>
@@ -69,7 +76,6 @@ const ClientRow: React.FC<ClientRowProps> = ({
             (client.remark.length > 12 ? "..." : "")
           : " N/A"}
       </td>
-
       <td className="py-3 px-4 text-sm cursor-pointer relative">
         <CircleEllipsisIcon onClick={() => setMenuOpen((prev) => !prev)} />
         {menuOpen && (
@@ -127,12 +133,12 @@ const ClientList: React.FC = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [remarkClient, setRemarkClient] = useState<Client | null>(null);
+  const [reminderClient, setReminderClient] = useState<Client | null>(null);
 
-  const filteredClients = clients.filter(
-    (client) =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.companyName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClients = clients.filter((client) =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.companyName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleUpdate = (client: Client) => {
@@ -147,17 +153,33 @@ const ClientList: React.FC = () => {
     setRemarkClient(client);
   };
 
-  const handleRemind = async (client: Client) => {
+  // Instead of directly sending a reminder, open the ReminderModal
+  const handleRemind = (client: Client) => {
+    setReminderClient(client);
+  };
+
+  const handleScheduleReminder = async (
+    clientId: string,
+    datetime: string,
+    message: string
+  ) => {
     try {
       await axios.post(
-        `${BACKEND_URL}/api/customer/reminder`,
-        { id: client.id },
+        `http://localhost:5040/api/reminder`,
+        { id: clientId, datetime, message },
         { headers: { authorization: localStorage.getItem("token") } }
       );
-      alert("Reminder sent successfully!");
+      alert("Reminder scheduled successfully!");
+      // Optionally update the client locally to reflect the reminder
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === clientId ? { ...c, reminder: { datetime, message } } : c
+        )
+      );
+      setReminderClient(null);
     } catch (err) {
-      alert("Failed to send reminder");
-      console.error("Failed to send reminder:", err);
+      alert("Failed to schedule reminder");
+      console.error("Reminder scheduling error:", err);
     }
   };
 
@@ -168,8 +190,8 @@ const ClientList: React.FC = () => {
         data: { id: clientToDelete.id },
         headers: { authorization: localStorage.getItem("token") },
       });
-      setClients((prevClients) =>
-        prevClients.filter((c) => c.id !== clientToDelete.id)
+      setClients((prev) =>
+        prev.filter((c) => c.id !== clientToDelete.id)
       );
       setClientToDelete(null);
     } catch (err) {
@@ -255,7 +277,7 @@ const ClientList: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onClientAdded={(newClient: Client) =>
-          setClients((prevClients) => [...prevClients, newClient])
+          setClients((prev) => [...prev, newClient])
         }
       />
 
@@ -265,8 +287,8 @@ const ClientList: React.FC = () => {
           onClose={() => setEditingClient(null)}
           client={editingClient}
           onClientUpdated={(updatedClient: Client) =>
-            setClients((prevClients) =>
-              prevClients.map((c) =>
+            setClients((prev) =>
+              prev.map((c) =>
                 c.id === updatedClient.id ? updatedClient : c
               )
             )
@@ -287,6 +309,15 @@ const ClientList: React.FC = () => {
         remark={remarkClient ? remarkClient.remark : ""}
         clientName={remarkClient ? remarkClient.name : ""}
       />
+
+      {reminderClient && (
+        <ReminderModal
+          isOpen={!!reminderClient}
+          onClose={() => setReminderClient(null)}
+          client={reminderClient}
+          onSchedule={handleScheduleReminder}
+        />
+      )}
     </div>
   );
 };

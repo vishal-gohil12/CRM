@@ -8,6 +8,10 @@ export interface Client {
   remark?: string;
   companyName: string;
   companyId: string;
+  reminder?: {
+    datetime: string;
+    message: string;
+  };
   createdAt: string;
 }
 
