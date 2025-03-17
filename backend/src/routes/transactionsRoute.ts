@@ -1,49 +1,56 @@
 import { Router } from "express";
 import { authUser } from "../middleware/auth";
 import { prisma } from "..";
+import { z } from "zod";
 
 export const transactionRouter = Router();
 
-// Create a new transaction
+const transactionSchema = z.object({
+    companyName: z.string().min(1, "Company name is required"),
+    customerEmail: z.string().email("Invalid email"),
+    totalAmount: z.number().positive("Total amount must be positive"),
+    paidAmount: z.number().nonnegative("Paid amount must be non-negative"),
+    status: z.enum(["pending", "completed", "cancelled"]).optional(),
+    payment_type: z.string().optional()
+});
+
 transactionRouter.post("/", authUser, async (req, res) => {
     try {
-        const { companyName, customerEmail, amount, status } = req.body;
+        const parsedBody = transactionSchema.safeParse(req.body);
+        if (!parsedBody.success) {
+            res.status(400).json({ status: false, message: parsedBody.error.errors });
+            return;
+        }
+        const { companyName, customerEmail, totalAmount, paidAmount, status, payment_type } = parsedBody.data;
 
         const company = await prisma.company.findFirst({ where: { name: companyName } });
         const customer = await prisma.customer.findFirst({ where: { email: customerEmail, companyId: company?.id } });
 
         if (!company || !customer) {
-            res.status(404).json({
-                status: false,
-                message: "Company or Customer not found."
-            });
+            res.status(404).json({ status: false, message: "Company or Customer not found." });
             return;
         }
+
+        const pendingAmount = totalAmount - paidAmount;
 
         const transaction = await prisma.transaction.create({
             data: {
                 customerId: customer.id,
-                amount,
                 companyId: company.id,
+                totalAmount,
+                paidAmount,
+                pendingAmount,
                 status: status || "pending",
+                payment_type: payment_type || "cash"
             },
-            include: { customer: true, company: true } // Ensure related data is included
+            include: { customer: true, company: true }
         });
 
         res.status(201).json({
             status: true,
             message: "Transaction created successfully.",
-            transaction: {
-                id: transaction.id,
-                amount: transaction.amount,
-                status: transaction.status,
-                customerName: transaction.customer.name,
-                customerEmail: transaction.customer.email,
-                companyName: transaction.company.name,
-                createdAt: transaction.createdAt
-            }
+            transaction
         });
-
     } catch (err) {
         console.error("Error creating transaction:", err);
         res.status(500).json({ status: false, message: "Internal Server Error" });
@@ -53,16 +60,18 @@ transactionRouter.post("/", authUser, async (req, res) => {
 // Update an existing transaction
 transactionRouter.put("/", authUser, async (req, res) => {
     try {
-        const { companyName, customerEmail, amount, status } = req.body;
+        const parsedBody = transactionSchema.safeParse(req.body);
+        if (!parsedBody.success) {
+            res.status(400).json({ status: false, message: parsedBody.error.errors });
+            return;
+        }
+        const { companyName, customerEmail, totalAmount, paidAmount, status, payment_type } = parsedBody.data;
 
         const company = await prisma.company.findFirst({ where: { name: companyName } });
         const customer = await prisma.customer.findFirst({ where: { email: customerEmail, companyId: company?.id } });
 
         if (!company || !customer) {
-            res.status(404).json({
-                status: false,
-                message: "Company or Customer not found."
-            });
+            res.status(404).json({ status: false, message: "Company or Customer not found." });
             return;
         }
 
@@ -72,18 +81,20 @@ transactionRouter.put("/", authUser, async (req, res) => {
         });
 
         if (!transaction) {
-            res.status(404).json({
-                status: false,
-                message: "Transaction not found for this customer."
-            });
+            res.status(404).json({ status: false, message: "Transaction not found for this customer." });
             return;
         }
+
+        const pendingAmount = totalAmount - paidAmount;
 
         const updatedTransaction = await prisma.transaction.update({
             where: { id: transaction.id },
             data: {
-                amount: amount,
+                totalAmount,
+                paidAmount,
+                pendingAmount,
                 status: status || transaction.status,
+                payment_type: payment_type || transaction.payment_type
             },
             include: { customer: true, company: true }
         });
@@ -91,17 +102,8 @@ transactionRouter.put("/", authUser, async (req, res) => {
         res.status(200).json({
             status: true,
             message: "Transaction updated successfully.",
-            transaction: {
-                id: updatedTransaction.id,
-                amount: updatedTransaction.amount,
-                status: updatedTransaction.status,
-                customerName: updatedTransaction.customer.name,
-                customerEmail: updatedTransaction.customer.email,
-                companyName: updatedTransaction.company.name,
-                createdAt: transaction.createdAt
-            }
+            transaction: updatedTransaction
         });
-
     } catch (err) {
         console.error("Error updating transaction:", err);
         res.status(500).json({ status: false, message: "Internal Server Error" });
@@ -111,43 +113,34 @@ transactionRouter.put("/", authUser, async (req, res) => {
 // Get all transactions
 transactionRouter.get("/get_all", authUser, async (req, res) => {
     try {
+        const { companyName } = req.body;
         const transactions = await prisma.transaction.findMany({
+            where: { company: companyName },
             select: {
                 id: true,
-                amount: true,
+                totalAmount: true,
+                paidAmount: true,
+                pendingAmount: true,
                 status: true,
+                payment_type: true,
                 createdAt: true,
-                customer: {
-                    select: { name: true, email: true }
-                },
-                company: {
-                    select: { name: true }
-                }
+                customer: { select: { company_and_name: true, email: true } },
+                company: { select: { name: true } }
             }
         });
-
-        const formattedTransactions = transactions.map(tx => ({
-            id: tx.id,
-            amount: tx.amount,
-            status: tx.status,
-            createdAt: tx.createdAt,
-            customerName: tx.customer?.name || "N/A",
-            customerEmail: tx.customer?.email || "N/A",
-            companyName: tx.company?.name || "N/A"
-        }));
 
         res.status(200).json({
             status: true,
             message: "Transactions retrieved successfully.",
-            transactions: formattedTransactions
+            transactions
         });
-
     } catch (err) {
         console.error("Error fetching transactions:", err);
         res.status(500).json({ status: false, message: "Internal Server Error" });
     }
 });
 
+// Delete a transaction
 transactionRouter.delete("/:id", authUser, async (req, res) => {
     try {
         const { id } = req.params;
@@ -155,10 +148,7 @@ transactionRouter.delete("/:id", authUser, async (req, res) => {
         const transaction = await prisma.transaction.findUnique({ where: { id } });
 
         if (!transaction) {
-            res.status(404).json({
-                status: false,
-                message: "Transaction not found."
-            });
+            res.status(404).json({ status: false, message: "Transaction not found." });
             return;
         }
 

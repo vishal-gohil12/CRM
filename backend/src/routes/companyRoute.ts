@@ -3,14 +3,14 @@ import { Company } from "../types/types";
 import { authUser } from "../middleware/auth";
 import { prisma } from "..";
 
-export const companyRotue = Router();
+export const companyRoute = Router();
 
-companyRotue.post('/add', authUser, async (req, res) => {
+companyRoute.post('/add', async (req, res) => {
     try {
-        const { name, industry } : Company = req.body;
+        const { name, industry }: Company = req.body;
         const company = await prisma.company.create({
             data: {
-                name: name,
+                name: name.toLocaleLowerCase(),
                 industry: industry
             }
         });
@@ -19,7 +19,41 @@ companyRotue.post('/add', authUser, async (req, res) => {
             status: true,
             company: company
         });
-    } catch(error: any) {
+    } catch (error: any) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
+
+companyRoute.get('/all', authUser, async (req, res) => {
+    try {
+        const { companyName }: { companyName: string } = req.body;
+        const companies = await prisma.company.findMany({
+            where : {
+                name: companyName.toLocaleLowerCase()
+            },
+            include: {
+                customers: {
+                    include: { transactions: true }
+                },
+                transactions: true
+            }
+        });
+
+        const formattedCompanies = companies.map(company => ({
+            id: company.id,
+            name: company.name,
+            industry: company.industry,
+            customers: company.customers,
+            transactions: company.transactions
+        }));
+
+        res.status(200).json({
+            status: true,
+            companies: formattedCompanies
+        });
+    } catch (error: any) {
         res.status(500).json({
             error: error.message
         });

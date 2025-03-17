@@ -14,65 +14,69 @@ datasource db {
 }
 
 model Company {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  industry  String  
-  users     User[]    
-  customers Customer[] 
-  transactions Transaction[] 
-  createdAt DateTime  @default(now())
+  id           String        @id @default(uuid())
+  name         String        @unique
+  industry     String
+  customers    Customer[]
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
 }
 
 model User {
   id        String   @id @default(uuid())
-  company   Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId String
   firstName String
   lastName  String
   email     String   @unique
-  password  String   
-  role      Role     @default(employee)
+  password  String
+  role      Role     @default(admin)
+  companyId String
   createdAt DateTime @default(now())
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId String
-  name      String
-  email     String   @unique
-  phone     String?
-  remark   String?
-  transactions Transaction[]
-  reminder Reminder[]
-  createdAt DateTime @default(now())
+  id               String        @id @default(uuid())
+  company          Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId        String
+  company_and_name String
+  email            String        @unique
+  gst_no           Int           @default(0)  
+  phone            String?
+  remark           String?
+  documents        String[]
+  transactions     Transaction[]
+  reminder         Reminder[]
+  createdAt        DateTime      @default(now())
 }
 
 model Transaction {
-  id             String     @id @default(uuid())
-  company        Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId      String
-  customer       Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  customerId     String
-  amount         Decimal
+  id            String            @id @default(uuid())
+  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId     String
+  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId    String
+  totalAmount   Decimal           @default(0)
+  paidAmount    Decimal           @default(0)
+  pendingAmount Decimal           @default(0)
   status        TransactionStatus @default(pending)
-  createdAt      DateTime @default(now())
+  payment_type  String            @default("cash")
+  reminders     Reminder[]
+  createdAt     DateTime          @default(now())
 }
 
 model Reminder {
-  id          String    @id @default(uuid())
-  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  customerId  String
-  datetime    DateTime
-  message     String
-  sent        Boolean   @default(false)
-  createdAt   DateTime  @default(now())
+  id            String       @id @default(uuid())
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId String?
+  customerId    String
+  datetime      DateTime
+  message       String
+  sent          Boolean      @default(false)
+  createdAt     DateTime     @default(now())
 }
 
 enum Role {
   admin
-  manager
-  employee
 }
 
 enum TransactionStatus {

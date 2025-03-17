@@ -4,12 +4,13 @@ import axios from 'axios';
 import { BACKEND_URL } from '../../backendUrl';
 import { toast } from 'react-hot-toast';
 import { useTransactions } from '../../context/TransactionContext';
-
+import { useCompany } from '../../context/companyContext';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   isOpen,
@@ -17,18 +18,27 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     customerEmail: '',
-    companyName: '',
-    amount: '',
-    status: 'pending'
+    totalAmount: '',
+    paidAmount: '',
+    status: 'pending',
+    payment_type: 'online'
   });
   const [isLoading, setIsLoading] = useState(false);
   const { setTransactions } = useTransactions();
+  const { selectedCompany  } = useCompany();
 
   const handleSubmit = async (e: React.FormEvent) => {
     setIsLoading(true);
     e.preventDefault();
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/transactions`, formData, {
+      const payload = {
+        ...formData,
+        totalAmount: Number(formData.totalAmount),
+        paidAmount: Number(formData.paidAmount),
+        companyName: selectedCompany?.name.toLowerCase() || " "
+      };
+      console.log(payload);
+      const res = await axios.post(`${BACKEND_URL}/api/transactions`, payload, {
         headers: {
           authorization: localStorage.getItem('token')
         }
@@ -40,10 +50,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       } else {
         toast.error('Failed to add transaction.');
       }
-    } catch (error) {
-      toast.error('Error while adding transaction.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Error while adding transaction.';
+      toast.error(Array.isArray(errorMessage) ? errorMessage[0].message : errorMessage);
       console.error('Error while adding transaction:', error);
-    }finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -52,10 +64,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Add New Transaction</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+      <div className="bg-white rounded-lg w-full max-w-md p-6 border border-orange-500">
+        <div className="flex justify-between items-center mb-4 border-b border-orange-300 pb-3">
+          <h2 className="text-xl font-semibold text-black">Add New Transaction</h2>
+          <button onClick={onClose} className="p-1 hover:bg-orange-100 rounded text-black">
             <X size={20} />
           </button>
         </div>
@@ -63,55 +75,77 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Customer's Email *
               </label>
               <input
+                type="email"
                 required
                 value={formData.customerEmail}
                 onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="customer@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Company's Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.companyName}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount *
+              <label className="block text-sm font-medium text-black mb-1">
+                Total Amount *
               </label>
               <input
                 type="number"
                 required
                 step="0.01"
                 min="0"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
+                value={formData.totalAmount}
+                onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="0.00"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
+                Paid Amount *
+              </label>
+              <input
+                type="number"
+                required
+                step="0.01"
+                min="0"
+                value={formData.paidAmount}
+                onChange={(e) => setFormData({ ...formData, paidAmount: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">
                 Status *
               </label>
               <select
                 required
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
               >
                 <option value="pending">Pending</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">
+                Payment Type *
+              </label>
+              <select
+                required
+                value={formData.payment_type}
+                onChange={(e) => setFormData({ ...formData, payment_type: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
+              >
+                <option value="online">Online</option>
+                <option value="cash">Cash</option>
+                <option value="check">Check</option>
+                <option value="bank_transfer">Bank Transfer</option>
               </select>
             </div>
           </div>
@@ -120,13 +154,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-4 py-2 text-sm font-medium text-black border border-orange-500 hover:bg-orange-50 rounded-lg"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg flex items-center justify-center"
+              className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg flex items-center justify-center"
               disabled={isLoading}
             >
               {isLoading ? (

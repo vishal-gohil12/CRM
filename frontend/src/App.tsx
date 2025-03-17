@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
-import ClientList from "./components/client/ClientList";
+import CustomerList from "./components/client/ClientList";
 import Transactions from "./components/transaction/Transactions";
 import { Menu } from "lucide-react";
 import Login from "./components/auth/Login";
 import { useUser } from "./context/authContext";
-import { Routes, Route, useNavigate, Outlet  } from "react-router-dom";
+import { Routes, Route, useNavigate, Outlet } from "react-router-dom";
 import SignUp from "./components/auth/SignUp";
-import AddCompany from "./components/AddCompany";
 import { Toaster } from "react-hot-toast";
-import { ClientProvider } from "./context/clientContext";
+import { CustomerProvider } from "./context/clientContext";
 import { TransactionProvider } from "./context/TransactionContext";
+import CompanyList from "./components/company/CompanyList";
+import { CompanyProvider } from "./context/companyContext";
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState("clients");
@@ -21,13 +22,15 @@ function AppContent() {
   const renderContent = () => {
     switch (activeTab) {
       case "clients":
-        return <ClientList />;
+        return <CustomerList />;
       case "transactions":
         return <Transactions />;
       case "Log out":
-        return <Logout clearUser={clearUser}/>
+        return <Logout clearUser={clearUser} />;
+      case "company":
+        return <CompanyList />;
       default:
-        return <ClientList />;
+        return <CustomerList />;
     }
   };
 
@@ -81,43 +84,44 @@ function AppContent() {
   );
 }
 
-const Logout = ({clearUser }: { clearUser: () => void }) => {
+const Logout = ({ clearUser }: { clearUser: () => void }) => {
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     localStorage.removeItem("token");
-      clearUser(); 
-      navigate("/login"); 
+    clearUser();
+    navigate("/login");
   }, [clearUser, navigate]);
 
-  return null; 
+  return null;
 };
-
 
 function ProtectedLayout() {
   return (
-    <ClientProvider>
+    <CustomerProvider>
       <TransactionProvider>
         <Toaster position="top-right" reverseOrder={false} />
         <Outlet />
       </TransactionProvider>
-    </ClientProvider>
+    </CustomerProvider>
   );
 }
 
 function App() {
   return (
-    <Routes>
-    {/* Public Routes */}
-    <Route path="/login" element={<Login />} />
-    <Route path="/signup" element={<SignUp />} />
+    <CompanyProvider>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
 
-    {/* Protected Routes */}
-    <Route element={<ProtectedLayout />}>
-      <Route path="/" element={<AppContent />} />
-      <Route path="/company" element={<AddCompany />} />
-    </Route>
-  </Routes>
+        {/* Protected Routes */}
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<AppContent />} />
+          <Route path="/company" element={<CompanyList />} />
+        </Route>
+      </Routes>
+    </CompanyProvider>
   );
 }
 

@@ -1,5 +1,3 @@
-import Decimal from "decimal.js";
-
 export interface Client {
   id: string;
   name: string;
@@ -15,17 +13,30 @@ export interface Client {
   createdAt: string;
 }
 
+export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
+
 export interface Transaction {
   id: string;
-  clientId: string;
   companyId: string;
-  amount: Decimal;
-  date: Date;
-  status: 'pending' | 'completed' | 'cancelled';
-  createdAt: string;
+  companyName: string;
+  customerId: string;
   customerName: string;
   customerEmail: string;
+  totalAmount: number;
+  paidAmount: number;
+  pendingAmount: number;
+  status: TransactionStatus;
+  payment_type: string;
+  createdAt: string;
+}
+
+export interface TransactionFormData {
   companyName: string;
+  customerEmail: string;
+  totalAmount: number;
+  paidAmount: number;
+  status?: TransactionStatus;
+  payment_type?: string;
 }
 
 export interface Company {

@@ -1,37 +1,57 @@
-// ClientProvider.tsx
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { Client } from "../types";
-import { BACKEND_URL } from "../backendUrl";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { BACKEND_URL } from "../backendUrl";
 import { useUser } from "./authContext";
 
-interface ClientContextType {
-  clients: Client[];
-  loading: boolean;
-  setClients: React.Dispatch<React.SetStateAction<Client[]>>;
-  refreshClients: () => Promise<void>;
+// Define the Customer type based on the provided model
+export interface Customer {
+  id: string;
+  companyId: string;
+  company_and_name: string;
+  email: string;
+  gst_no: number;
+  phone?: string;
+  remark?: string;
+  documents: string[];
+  createdAt: string;
 }
 
-const ClientContext = createContext<ClientContextType | undefined>(undefined);
+interface CustomerContextType {
+  customers: Customer[];
+  loading: boolean;
+  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
+  refreshCustomers: () => Promise<void>;
+  getCustomerById: (id: string) => Customer | undefined;
+  getCustomersByCompany: (companyId: string) => Customer[];
+}
 
-export const ClientProvider = ({ children }: { children: ReactNode }) => {
+const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
+
+export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
-  const [clients, setClients] = useState<Client[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchClients = async () => {
+  const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/customer/get_all`, {
+      const response = await axios.get<{
+        status: boolean;
+        customers: Customer[];
+        message?: string;
+      }>(`${BACKEND_URL}/api/customer/get_all`, {
         headers: { authorization: localStorage.getItem("token") },
       });
+
       if (!response.data.status) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(response.data.message || "Failed to fetch customers");
       }
-      setClients(response.data.customers);
+      
+      setCustomers(response.data.customers);
     } catch (err) {
-      toast.error(`Error : ${err}`);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      toast.error(`Error: ${errorMessage}`);
       console.error(err);
     } finally {
       setLoading(false);
@@ -40,26 +60,45 @@ export const ClientProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user) {
-      fetchClients();
+      fetchCustomers();
+    } else {
+      setCustomers([]);
     }
   }, [user]);
 
-  const refreshClients = async () => {
-    await fetchClients();
+  const refreshCustomers = async () => {
+    await fetchCustomers();
+  };
+
+  const getCustomerById = (id: string): Customer | undefined => {
+    return customers.find(customer => customer.id === id);
+  };
+
+  const getCustomersByCompany = (companyId: string): Customer[] => {
+    return customers.filter(customer => customer.companyId === companyId);
   };
 
   return (
-    <ClientContext.Provider value={{ clients, loading, setClients, refreshClients }}>
+    <CustomerContext.Provider 
+      value={{ 
+        customers, 
+        loading, 
+        setCustomers, 
+        refreshCustomers,
+        getCustomerById,
+        getCustomersByCompany
+      }}
+    >
       {children}
-    </ClientContext.Provider>
+    </CustomerContext.Provider>
   );
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useClients = () => {
-  const context = useContext(ClientContext);
+export const useCustomers = () => {
+  const context = useContext(CustomerContext);
   if (context === undefined) {
-    throw new Error("useClients must be used within a ClientProvider");
+    throw new Error("useCustomers must be used within a CustomerProvider");
   }
   return context;
 };

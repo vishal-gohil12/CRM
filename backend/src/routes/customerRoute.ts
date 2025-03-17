@@ -8,7 +8,7 @@ export const customerRoute = Router();
 
 customerRoute.post('/add_customer', authUser, async (req, res) => {
     try {
-        const { name, email, phone, remark, companyName }: Customer = req.body;
+        const { company_and_name, email, gst_no, phone, remark, companyName }: Customer = req.body;
 
         const company = await prisma.company.findUnique({ where: { name: companyName }});
         if(!company) {
@@ -28,7 +28,7 @@ customerRoute.post('/add_customer', authUser, async (req, res) => {
             return;
         }
 
-        if(!name || !email ) {
+        if(!company_and_name || !email ) {
             res.status(404).json({
                 status: false,
                 error: "Fill the all data"
@@ -38,9 +38,10 @@ customerRoute.post('/add_customer', authUser, async (req, res) => {
 
         const customer = await prisma.customer.create({
             data: { 
-                name, 
+                company_and_name, 
                 email, 
                 phone, 
+                gst_no,
                 remark, 
                 company: {
                     connect: {id: company.id}
@@ -66,20 +67,21 @@ customerRoute.post('/add_customer', authUser, async (req, res) => {
 });
 
 customerRoute.get('/get_all', authUser, async (req, res)=> {
-    try {
+    try {        
         const customer = await prisma.customer.findMany({
             include: {
                 company: {
-                    select: {name: true}
+                    select: { name: true }
                 }
             }
         });
 
         const customers = customer.map(cust => ({
             id: cust.id,
-            name: cust.name,
+            company_and_name: cust.company_and_name,
             email: cust.email,
             companyName: cust.company.name,
+            gst_no: cust.gst_no,
             phone: cust.phone,
             remark: cust.remark
         }))
@@ -98,8 +100,8 @@ customerRoute.get('/get_all', authUser, async (req, res)=> {
 
 customerRoute.put("/update", async (req, res) => {
     try {
-        const { id, name, email, phone, remark, companyName } : Customer = req.body;
-        let updateData : Prisma.CustomerUpdateInput = { name, email, phone, remark };
+        const { id, company_and_name, email, phone, gst_no, remark, companyName } : Customer = req.body;
+        let updateData : Prisma.CustomerUpdateInput = { company_and_name, email, phone, remark, gst_no };
         if(companyName) {
             const company = await prisma.company.findUnique({
                 where: { name: companyName }

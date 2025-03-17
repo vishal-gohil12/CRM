@@ -3,7 +3,6 @@ export type User = {
     lastName: string;
     email: string;
     password: string;
-    role?: Role;
     companyName: string;
 }
 
@@ -19,8 +18,9 @@ export enum Role {
 
 export type Customer = {
     id?:string;
-    name: string;
+    company_and_name: string;
     email: string;
+    gst_no: number;
     phone?: string;
     remark?: string;
     companyName: string;

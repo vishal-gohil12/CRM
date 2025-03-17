@@ -1,7 +1,5 @@
 import { Router } from "express";
-import nodemailer from "nodemailer";
 import { prisma } from "../index";
-import schedule from "node-schedule";
 import { config } from "dotenv";
 
 export const reminderRoute = Router();

@@ -2,7 +2,7 @@ import express from "express";
 import { config } from "dotenv";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
-import { companyRotue } from "./routes/companyRoute";
+import { companyRoute } from "./routes/companyRoute";
 import { userRoute } from "./routes/userRotue";
 import { customerRoute } from "./routes/customerRoute";
 import { transactionRouter } from "./routes/transactionsRoute";
@@ -19,7 +19,7 @@ app.use(cors({
     origin: "*"
 }));
 
-app.use('/api/company', companyRotue);
+app.use('/api/company', companyRoute);
 app.use('/api/', userRoute);
 app.use('/api/customer', customerRoute);
 app.use('/api/transactions', transactionRouter);
