@@ -28,11 +28,7 @@ companyRoute.post('/add', async (req, res) => {
 
 companyRoute.get('/all', authUser, async (req, res) => {
     try {
-        const { companyName }: { companyName: string } = req.body;
         const companies = await prisma.company.findMany({
-            where : {
-                name: companyName.toLocaleLowerCase()
-            },
             include: {
                 customers: {
                     include: { transactions: true }

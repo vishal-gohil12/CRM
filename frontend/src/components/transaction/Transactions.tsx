@@ -2,27 +2,26 @@ import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
-  Edit,
   Trash2,
   Loader2,
   Filter,
   ArrowUpDown,
-  Copy,
+  Edit,
   DollarSign,
   Check,
   Clock,
+  BellRing
 } from "lucide-react";
 import type { Transaction } from "../../context/TransactionContext";
 import AddTransactionModal from "./AddTransactionModal";
-import UpdateTransactionModal from "./UpdateTransactionModal";
+import UpdateTransactionModal from "./UpdateTransactionModal"; // New component
 import { useTransactions } from "../../context/TransactionContext";
 import { BACKEND_URL } from "../../backendUrl";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Define theme colors for easy reference
 const THEME = {
-  primary: "bg-orange-500", // Primary orange
+  primary: "bg-orange-500",
   primaryHover: "hover:bg-orange-600",
   secondary: "bg-black",
   secondaryHover: "hover:bg-gray-800",
@@ -55,8 +54,7 @@ const TransactionStatusBadge = ({
 const Transactions = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<Transaction | null>(null);
+  const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -69,7 +67,6 @@ const Transactions = () => {
   const { transactions, setTransactions } = useTransactions();
 
   useEffect(() => {
-    // Calculate total amount for filtered transactions
     if (filteredTransactions.length > 0) {
       const total = filteredTransactions.reduce(
         (sum, transaction) =>
@@ -80,10 +77,9 @@ const Transactions = () => {
       );
       setTotalAmount(total);
     } else {
-      setTotalAmount(0); // Reset total if no transactions
+      setTotalAmount(0);
     }
 
-    // Simulate loading state for demo purposes
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,17 +127,6 @@ const Transactions = () => {
     }
   });
 
-  const handleUpdateClick = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setIsUpdateModalOpen(true);
-  };
-
-  const handleTransactionUpdate = (updatedTransaction: Transaction) => {
-    setTransactions((prev) =>
-      prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
-    );
-  };
-
   const handleDeleteTransaction = async (id: string) => {
     setLoadingId(id);
     try {
@@ -165,9 +150,9 @@ const Transactions = () => {
     }
   };
 
-  const handleCopyTransactionId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    // Could add toast notification here
+  const handleUpdateTransaction = (transaction: Transaction) => {
+    setCurrentTransaction(transaction);
+    setIsUpdateModalOpen(true);
   };
 
   if (isLoading) {
@@ -374,215 +359,212 @@ const Transactions = () => {
 
       {/* Transactions Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-  <div className="overflow-x-auto">
-    <table className="min-w-full divide-y divide-gray-200">
-      <thead className="bg-gray-50">
-        <tr>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-            onClick={() => handleSort("createdAt")}
-          >
-            <div className="flex items-center">
-              Date
-              <ArrowUpDown size={14} className="ml-1 text-gray-400" />
-            </div>
-          </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-            onClick={() => handleSort("companyName")}
-          >
-            <div className="flex items-center">
-              Company
-              <ArrowUpDown size={14} className="ml-1 text-gray-400" />
-            </div>
-          </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-            onClick={() => handleSort("customerName")}
-          >
-            <div className="flex items-center">
-              Customer
-              <ArrowUpDown size={14} className="ml-1 text-gray-400" />
-            </div>
-          </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-            onClick={() => handleSort("status")}
-          >
-            <div className="flex items-center">
-              Status
-              <ArrowUpDown size={14} className="ml-1 text-gray-400" />
-            </div>
-          </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-            onClick={() => handleSort("totalAmount")}
-          >
-            <div className="flex items-center">
-              Total Amount
-              <ArrowUpDown size={14} className="ml-1 text-gray-400" />
-            </div>
-          </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-            onClick={() => handleSort("paidAmount")}
-          >
-            <div className="flex items-center">
-              Paid Amount
-              <ArrowUpDown size={14} className="ml-1 text-gray-400" />
-            </div>
-          </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-          >
-            <div className="flex items-center">
-              Pending Amount
-            </div>
-          </th>
-          <th
-            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-            onClick={() => handleSort("payment_type")}
-          >
-            <div className="flex items-center">
-              Payment Method
-              <ArrowUpDown size={14} className="ml-1 text-gray-400" />
-            </div>
-          </th>
-          <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">
-            Actions
-          </th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200 bg-white">
-        {sortedTransactions.length > 0 ? (
-          sortedTransactions.map((transaction) => (
-            <motion.tr
-              key={transaction.id}
-              className="hover:bg-orange-50 transition-colors"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {new Date(transaction.createdAt).toLocaleDateString(
-                  "en-US",
-                  {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  }
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <div className="font-medium text-gray-900">
-                  {transaction.companyName}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <div className="font-medium text-gray-900">
-                  {transaction.customerName}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <TransactionStatusBadge status={transaction.status} />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <span
-                  className={`font-semibold ${
-                    transaction.status === "completed"
-                      ? "text-green-600"
-                      : transaction.status === "cancelled"
-                      ? "text-red-600"
-                      : "text-orange-600"
-                  }`}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort("createdAt")}
                 >
-                  Rs. {Number(transaction.totalAmount).toLocaleString()}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <span className="font-medium text-green-600">
-                  Rs. {Number(transaction.paidAmount).toLocaleString()}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <span className="font-medium text-orange-600">
-                  Rs. {Number(transaction.totalAmount - transaction.paidAmount).toLocaleString()}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-medium capitalize">
-                  {transaction.payment_type?.replace('_', ' ') || 'N/A'}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                <div className="flex items-center justify-center space-x-3">
-                  <button
-                    onClick={() => handleUpdateClick(transaction)}
-                    className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-                    title="Edit transaction"
+                  <div className="flex items-center">
+                    Date
+                    <ArrowUpDown size={14} className="ml-1 text-gray-400" />
+                  </div>
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort("companyName")}
+                >
+                  <div className="flex items-center">
+                    Company
+                    <ArrowUpDown size={14} className="ml-1 text-gray-400" />
+                  </div>
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort("customerName")}
+                >
+                  <div className="flex items-center">
+                    Customer
+                    <ArrowUpDown size={14} className="ml-1 text-gray-400" />
+                  </div>
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort("status")}
+                >
+                  <div className="flex items-center">
+                    Status
+                    <ArrowUpDown size={14} className="ml-1 text-gray-400" />
+                  </div>
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort("totalAmount")}
+                >
+                  <div className="flex items-center">
+                    Total Amount
+                    <ArrowUpDown size={14} className="ml-1 text-gray-400" />
+                  </div>
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort("paidAmount")}
+                >
+                  <div className="flex items-center">
+                    Paid Amount
+                    <ArrowUpDown size={14} className="ml-1 text-gray-400" />
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                  <div className="flex items-center">Pending Amount</div>
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort("payment_type")}
+                >
+                  <div className="flex items-center">
+                    Payment Method
+                    <ArrowUpDown size={14} className="ml-1 text-gray-400" />
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {sortedTransactions.length > 0 ? (
+                sortedTransactions.map((transaction) => (
+                  <motion.tr
+                    key={transaction.id}
+                    className="hover:bg-orange-50 transition-colors"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-                    title="Copy transaction ID"
-                    onClick={() =>
-                      handleCopyTransactionId(transaction.id)
-                    }
-                  >
-                    <Copy size={16} />
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleDeleteTransaction(transaction.id)
-                    }
-                    className="flex items-center text-red-600 hover:text-red-800 transition-colors"
-                    disabled={loadingId === transaction.id}
-                    title="Delete transaction"
-                  >
-                    {loadingId === transaction.id ? (
-                      <Loader2 className="animate-spin" size={16} />
-                    ) : (
-                      <Trash2 size={16} />
-                    )}
-                  </button>
-                </div>
-              </td>
-            </motion.tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={9} className="px-6 py-12 text-center">
-              <div className="flex flex-col items-center">
-                <div className="p-3 bg-gray-100 rounded-full mb-4">
-                  <Search size={24} className="text-gray-400" />
-                </div>
-                <p className="text-lg font-medium text-gray-600">
-                  No transactions found
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Try adjusting your search or filters
-                </p>
-              </div>
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {new Date(transaction.createdAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="font-medium text-gray-900">
+                        {transaction.companyName}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="font-medium text-gray-900">
+                        {transaction.customerName}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <TransactionStatusBadge status={transaction.status} />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span
+                        className={`font-semibold ${
+                          transaction.status === "completed"
+                            ? "text-green-600"
+                            : transaction.status === "cancelled"
+                            ? "text-red-600"
+                            : "text-orange-600"
+                        }`}
+                      >
+                        Rs. {Number(transaction.totalAmount).toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className="font-medium text-green-600">
+                        Rs. {Number(transaction.paidAmount).toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className="font-medium text-orange-600">
+                        Rs.{" "}
+                        {Number(
+                          transaction.totalAmount - transaction.paidAmount
+                        ).toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-medium capitalize">
+                        {transaction.payment_type?.replace("_", " ") || "N/A"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                      <div className="flex items-center justify-center space-x-3">
+                        <button
+                          className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                          title="Update transaction"
+                          onClick={() => handleUpdateTransaction(transaction)}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                          title="Send notification"
+                        >
+                          <BellRing size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTransaction(transaction.id)}
+                          className="flex items-center text-red-600 hover:text-red-800 transition-colors"
+                          disabled={loadingId === transaction.id}
+                          title="Delete transaction"
+                        >
+                          {loadingId === transaction.id ? (
+                            <Loader2 className="animate-spin" size={16} />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={9} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="p-3 bg-gray-100 rounded-full mb-4">
+                        <Search size={24} className="text-gray-400" />
+                      </div>
+                      <p className="text-lg font-medium text-gray-600">
+                        No transactions found
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Try adjusting your search or filters
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
+      {/* Modals */}
       <AddTransactionModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
-
-      {isUpdateModalOpen && selectedTransaction && (
+      
+      {currentTransaction && (
         <UpdateTransactionModal
           isOpen={isUpdateModalOpen}
-          transaction={setTransactions}
-          onClose={() => setIsUpdateModalOpen(false)}
-          onUpdateTransaction={handleTransactionUpdate}
+          onClose={() => {
+            setIsUpdateModalOpen(false);
+            setCurrentTransaction(null);
+          }}
+          transaction={currentTransaction}
         />
       )}
     </div>

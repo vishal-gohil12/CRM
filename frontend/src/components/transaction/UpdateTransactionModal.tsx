@@ -1,179 +1,291 @@
-import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import axios from "axios";
+import { useState, useEffect } from "react";
+import { X, Loader2 } from "lucide-react";
+import { Dialog } from "@headlessui/react";
+import { useTransactions, Transaction } from "../../context/TransactionContext";
 import { BACKEND_URL } from "../../backendUrl";
-import { toast } from "react-hot-toast";
-import type { Transaction } from "../../types";
-
-interface FormData {
-  id: string;
-  customerEmail: string;
-  companyName: string;
-  amount: string;
-  status: "pending" | "completed" | "cancelled";
-}
+import axios from "axios";
+import { motion } from "framer-motion";
 
 interface UpdateTransactionModalProps {
   isOpen: boolean;
-  transaction: Transaction;
   onClose: () => void;
-  onUpdateTransaction: (updatedTransaction: Transaction) => void;
+  transaction: Transaction;
 }
 
-const UpdateTransactionModal: React.FC<UpdateTransactionModalProps> = ({
+// Using the Transaction type from the context
+const UpdateTransactionModal = ({
   isOpen,
-  transaction,
   onClose,
-  onUpdateTransaction,
-}) => {
-  const [formData, setFormData] = useState<FormData>({
-    id: transaction.id,
-    customerEmail: transaction.customerEmail,
-    companyName: transaction.companyName,
-    amount: transaction.amount.toString(),
-    status: transaction.status,
+  transaction
+}: UpdateTransactionModalProps) => {
+  const [formData, setFormData] = useState<{
+    customerName: string;
+    companyName: string;
+    totalAmount: number;
+    paidAmount: number;
+    status: "pending" | "completed" | "cancelled";
+    payment_type: string;
+  }>({
+    customerName: "",
+    companyName: "",
+    totalAmount: 0,
+    paidAmount: 0,
+    status: "pending",
+    payment_type: "cash"
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  // Using the setTransactions from the context
+  const { setTransactions } = useTransactions();
 
   useEffect(() => {
-    if (isOpen) {
+    if (transaction) {
       setFormData({
-        id: transaction.id,
-        customerEmail: transaction.customerEmail,
+        customerName: transaction.customerName,
         companyName: transaction.companyName,
-        amount: transaction.amount.toString(),
+        totalAmount: transaction.totalAmount,
+        paidAmount: transaction.paidAmount,
         status: transaction.status,
+        payment_type: transaction.payment_type
       });
     }
-  }, [isOpen, transaction]);
+  }, [transaction]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    setFormData((prev) => ({
+      ...prev,
+      [name]: 
+        name === "totalAmount" || name === "paidAmount" 
+          ? Number(value) 
+          : name === "status" 
+            ? (value as "pending" | "completed" | "cancelled") 
+            : value,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    setIsLoading(true);
     e.preventDefault();
-    try {
-      const res = await axios.put(`${BACKEND_URL}/api/transactions`, formData, {
-        headers: {
-          authorization: localStorage.getItem("token"),
-        },
-      });
+    setIsLoading(true);
+    setError("");
+    setSuccess(false);
 
-      if (res.data.status === true) {
-        toast.success("Transaction updated successfully!");
-        onUpdateTransaction(res.data.transaction);
-        onClose();
+    try {
+      const response = await axios.put(
+        `${BACKEND_URL}/api/transactions/${transaction.id}`,
+        formData,
+        {
+          headers: {
+            authorization: localStorage.getItem("token"),
+          },
+        }
+      );
+
+      if (response.data.status) {
+        setSuccess(true);
+        // Update the transactions with proper typing
+        setTransactions((prev) =>
+          prev.map((t) => (t.id === transaction.id ? {
+            ...t,
+            customerName: formData.customerName,
+            companyName: formData.companyName,
+            totalAmount: formData.totalAmount,
+            paidAmount: formData.paidAmount,
+            status: formData.status,
+            payment_type: formData.payment_type,
+            pendingAmount: formData.totalAmount - formData.paidAmount
+          } : t))
+        );
+        setTimeout(() => {
+          onClose();
+        }, 1000);
       } else {
-        toast.error("Failed to update transaction.");
+        setError(response.data.message || "Failed to update transaction");
       }
-    } catch (error) {
-      toast.error("Error while updating transaction.");
-      console.error("Error while updating transaction:", error);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      setError(
+        error.response?.data?.message || "Error updating transaction"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Update Transaction</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X size={20} />
-          </button>
-        </div>
+    <Dialog
+      open={isOpen}
+      onClose={() => {
+        if (!isLoading) {
+          onClose();
+        }
+      }}
+      className="relative z-50"
+    >
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Customer's Email *
-              </label>
-              <input
-                required
-                value={formData.customerEmail}
-                onChange={(e) =>
-                  setFormData({ ...formData, customerEmail: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Company's Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.companyName}
-                onChange={(e) =>
-                  setFormData({ ...formData, companyName: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount *
-              </label>
-              <input
-                type="number"
-                required
-                step="0.01"
-                min="0"
-                value={formData.amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, amount: e.target.value || "0" })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status *
-              </label>
-              <select
-                required
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value as "pending" | "completed" | "cancelled",
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
-              >
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end space-x-3">
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="mx-auto max-w-lg w-full rounded-xl bg-white p-6 shadow-xl">
+          <div className="flex justify-between items-center mb-4">
+            <Dialog.Title className="text-lg font-bold text-gray-900">
+              Update Transaction
+            </Dialog.Title>
             <button
-              type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg flex items-center justify-center"
+              className="p-1 rounded-full hover:bg-gray-100 transition-colors"
               disabled={isLoading}
             >
-              {isLoading ? (
-                <svg className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full" viewBox="0 0 24 24"></svg>
-              ) : (
-                'Add Transaction'
-              )}
+              <X size={20} className="text-gray-500" />
             </button>
           </div>
-        </form>
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Customer Name
+                  </label>
+                  <input
+                    type="text"
+                    name="customerName"
+                    value={formData.customerName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Company Name
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Total Amount
+                  </label>
+                  <input
+                    type="number"
+                    name="totalAmount"
+                    value={formData.totalAmount}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    required
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Paid Amount
+                  </label>
+                  <input
+                    type="number"
+                    name="paidAmount"
+                    value={formData.paidAmount}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    required
+                    min="0"
+                    max={formData.totalAmount}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    required
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Payment Type
+                  </label>
+                  <select
+                    name="payment_type"
+                    value={formData.payment_type}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    required
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-2 bg-red-50 text-red-600 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="p-2 bg-green-50 text-green-600 rounded-lg text-sm"
+                >
+                  Transaction updated successfully!
+                </motion.div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors flex items-center"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 size={16} className="mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Transaction"
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        </Dialog.Panel>
       </div>
-    </div>
+    </Dialog>
   );
 };
 

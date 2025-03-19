@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,9 +11,9 @@ model Company {
   id           String        @id @default(uuid())
   name         String        @unique
   industry     String
+  createdAt    DateTime      @default(now())
   customers    Customer[]
   transactions Transaction[]
-  createdAt    DateTime      @default(now())
 }
 
 model User {
@@ -29,50 +23,49 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(admin)
-  companyId String
   createdAt DateTime @default(now())
 }
 
 model Customer {
   id               String        @id @default(uuid())
-  company          Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId        String
-  company_and_name String
   email            String        @unique
-  gst_no           Int           @default(0)  
   phone            String?
+  createdAt        DateTime      @default(now())
   remark           String?
   documents        String[]
-  transactions     Transaction[]
+  gst_no           Int           @default(0)
+  company_and_name String
+  company          Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   reminder         Reminder[]
-  createdAt        DateTime      @default(now())
+  transactions     Transaction[]
 }
 
 model Transaction {
   id            String            @id @default(uuid())
-  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId     String
-  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
   customerId    String
-  totalAmount   Decimal           @default(0)
-  paidAmount    Decimal           @default(0)
-  pendingAmount Decimal           @default(0)
   status        TransactionStatus @default(pending)
-  payment_type  String            @default("cash")
-  reminders     Reminder[]
   createdAt     DateTime          @default(now())
+  paidAmount    Decimal           @default(0)
+  payment_type  String            @default("cash")
+  pendingAmount Decimal           @default(0)
+  totalAmount   Decimal           @default(0)
+  reminders     Reminder[]
+  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 
 model Reminder {
   id            String       @id @default(uuid())
-  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  transactionId String?
   customerId    String
   datetime      DateTime
   message       String
   sent          Boolean      @default(false)
   createdAt     DateTime     @default(now())
+  transactionId String?
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 enum Role {

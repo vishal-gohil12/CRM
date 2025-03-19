@@ -6,7 +6,7 @@ import { companyRoute } from "./routes/companyRoute";
 import { userRoute } from "./routes/userRotue";
 import { customerRoute } from "./routes/customerRoute";
 import { transactionRouter } from "./routes/transactionsRoute";
-import { reminderRoute } from "./routes/reminderRoute";
+//import { reminderRoute } from "./routes/reminderRoute";
 import "../src/controller/scheduleReminders";
 
 config();
@@ -23,7 +23,7 @@ app.use('/api/company', companyRoute);
 app.use('/api/', userRoute);
 app.use('/api/customer', customerRoute);
 app.use('/api/transactions', transactionRouter);
-app.use('/api/reminder', reminderRoute);
+//app.use('/api/reminder', reminderRoute);
 
 app.get('/', (req, res)=> {
     res.send("hello world");

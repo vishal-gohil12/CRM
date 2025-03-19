@@ -1,17 +1,17 @@
-export interface Client {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  remark?: string;
-  companyName: string;
-  companyId: string;
-  reminder?: {
-    datetime: string;
-    message: string;
-  };
-  createdAt: string;
-}
+// export interface Client {
+//   id: string;
+//   name: string;
+//   email: string;
+//   phone: string;
+//   remark?: string;
+//   companyName: string;
+//   companyId: string;
+//   reminder?: {
+//     datetime: string;
+//     message: string;
+//   };
+//   createdAt: string;
+// }
 
 export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
 

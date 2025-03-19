@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 export interface Company {
   id: number;
   name: string;
-  logo: string;
 }
 
 // Define the context type
@@ -22,12 +21,12 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 // Sample initial companies data
 const initialCompanies: Company[] = [
-  { id: 1, name: 'Sunfiber', logo: '/logos/sunfiber.png' },
-  { id: 2, name: 'TechCorp', logo: '/logos/techcorp.png' },
-  { id: 3, name: 'GlobalTrade', logo: '/logos/globaltrade.png' },
-  { id: 4, name: 'InnovateX', logo: '/logos/innovatex.png' },
-  { id: 5, name: 'EcoSolutions', logo: '/logos/ecosolutions.png' },
-  { id: 6, name: 'MegaIndustries', logo: '/logos/megaindustries.png' },
+  { id: 1, name: 'Sunfiber' },
+  { id: 2, name: 'Jyoti trading' },
+  { id: 3, name: 'GlobalTrade' },
+  { id: 4, name: 'InnovateX' },
+  { id: 5, name: 'EcoSolutions' },
+  { id: 6, name: 'MegaIndustries' },
 ];
 
 // Create provider component

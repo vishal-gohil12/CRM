@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { BACKEND_URL } from "../backendUrl";
 import { useUser } from "./authContext";
+import { useCompany } from "./companyContext";
 
 // Define the Customer type based on the provided model
 export interface Customer {
@@ -31,17 +32,20 @@ const CustomerContext = createContext<CustomerContextType | undefined>(undefined
 export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const { selectedCompany } = useCompany();
   const [loading, setLoading] = useState<boolean>(false);
-
   const fetchCustomers = async () => {
     setLoading(true);
+
+    if (!selectedCompany) {
+      setCustomers([]); // Or handle as needed
+      return;
+    }
+
     try {
-      const response = await axios.get<{
-        status: boolean;
-        customers: Customer[];
-        message?: string;
-      }>(`${BACKEND_URL}/api/customer/get_all`, {
-        headers: { authorization: localStorage.getItem("token") },
+      const response = await axios.get(`${BACKEND_URL}/api/customer/get_all`, {
+        params: { companyName: selectedCompany.name.toLowerCase() },
+        headers: { authorization: localStorage.getItem("token") }
       });
 
       if (!response.data.status) {
@@ -64,6 +68,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setCustomers([]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const refreshCustomers = async () => {

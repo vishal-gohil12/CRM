@@ -67,8 +67,14 @@ customerRoute.post('/add_customer', authUser, async (req, res) => {
 });
 
 customerRoute.get('/get_all', authUser, async (req, res)=> {
-    try {        
+    try {  
+        const companyName = req.query.companyName as string;      
         const customer = await prisma.customer.findMany({
+            where: {
+                company: {
+                    name: companyName
+                }
+            },
             include: {
                 company: {
                     select: { name: true }

@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, useCustomers } from "../../context/clientContext";
-import { FiUser, FiMail, FiPhone, FiFileText, FiCalendar, FiSearch, FiChevronDown, FiChevronUp, FiPlus } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiFileText, FiCalendar, FiSearch, FiChevronDown, FiChevronUp, FiPlus, FiBell } from 'react-icons/fi';
 import { AddCustomerModal } from './AddClientModal';
+import ReminderModal from './ReminderModal';
 
 interface CustomerCardProps {
   customer: Customer;
   onClick: () => void;
   isExpanded: boolean;
+  onReminderClick: () => void;
 }
 
-
-
-const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onClick, isExpanded }) => {  
+const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onClick, isExpanded, onReminderClick }) => {  
   const documents = customer.documents || [];
   
   return (
@@ -69,12 +69,16 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onClick, isExpand
             </div>
           )}
 
-          <div className="mt-4 flex justify-end space-x-2">
-            <button className="px-3 py-1 text-sm bg-black text-white rounded hover:bg-gray-800 transition-colors">
-              Details
-            </button>
-            <button className="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors">
-              Contact
+          <div className="mt-4 flex justify-end">
+            <button 
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReminderClick();
+              }}
+            >
+              <FiBell size={18} />
+              <span>Set Reminder</span>
             </button>
           </div>
         </div>
@@ -83,15 +87,15 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onClick, isExpand
   );
 };
 
-
-
 const CustomerList: React.FC = () => {
   const { customers, loading, refreshCustomers } = useCustomers();
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [expandedCustomerId, setExpandedCustomerId] = useState<string | null>(null);
+  const [expandedCustomerId, setExpandedCustomerId] = useState<string | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>('company_and_name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     refreshCustomers();
@@ -103,7 +107,7 @@ const CustomerList: React.FC = () => {
   };
 
   const toggleExpand = (customerId: string) => {
-    setExpandedCustomerId(expandedCustomerId === customerId ? null : customerId);
+    setExpandedCustomerId(expandedCustomerId === customerId ? undefined : customerId);
   };
 
   const handleSort = (field: string) => {
@@ -117,6 +121,16 @@ const CustomerList: React.FC = () => {
 
   const handleCustomerAdded = () => {
     refreshCustomers();
+  };
+
+  const handleReminderClick = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    setIsReminderModalOpen(true);
+  };
+
+  const handleReminderAdded = () => {
+    console.log('Reminder added');
+    setIsReminderModalOpen(false);
   };
 
   const sortedAndFilteredCustomers = (customers || [])
@@ -214,6 +228,7 @@ const CustomerList: React.FC = () => {
                 customer={customer}
                 onClick={() => toggleExpand(customer.id)}
                 isExpanded={expandedCustomerId === customer.id}
+                onReminderClick={() => handleReminderClick(customer.id)}
               />
             ))}
           </div>
@@ -238,6 +253,13 @@ const CustomerList: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCustomerAdded={handleCustomerAdded}
+      />
+
+      <ReminderModal 
+        isOpen={isReminderModalOpen}
+        onClose={() => setIsReminderModalOpen(false)}
+        customerId={selectedCustomerId}
+        onReminderAdded={handleReminderAdded}
       />
     </div>
   );

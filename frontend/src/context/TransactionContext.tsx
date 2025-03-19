@@ -3,6 +3,7 @@ import axios from 'axios';
 import { BACKEND_URL } from '../backendUrl';
 import { toast } from 'react-hot-toast';
 import { useUser } from './authContext';
+import { useCompany } from './companyContext';
 
 // Updated backend response interfaces
 interface Customer {
@@ -77,7 +78,7 @@ interface TransactionContextValue {
 
 const TransactionContext = createContext<TransactionContextValue | undefined>(undefined);
 
-// Helper function to map backend response to frontend model
+
 const mapTransactionResponse = (data: TransactionResponse): Transaction => {
   return {
     id: data.id,
@@ -98,6 +99,7 @@ export const TransactionProvider = ({ children }: {children: ReactNode}) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useUser();
+  const { selectedCompany } = useCompany();
   
   const fetchTransactions = async () => {
     if (!user) return;
@@ -105,11 +107,15 @@ export const TransactionProvider = ({ children }: {children: ReactNode}) => {
     setIsLoading(true);
     setError(null);
     
+    if (!selectedCompany) {
+      setTransactions([]); // Or handle as needed
+      return;
+    }
+
     try {
       const res = await axios.get(`${BACKEND_URL}/api/transactions/get_all`, {
-        headers: {
-          authorization: localStorage.getItem('token') || '',
-        },
+        params: { companyName: selectedCompany.name.toLowerCase() },
+        headers: { authorization: localStorage.getItem("token") }
       });
       
       if (res.data.status) {
@@ -241,7 +247,6 @@ export const TransactionProvider = ({ children }: {children: ReactNode}) => {
       });
       
       if (res.data.status) {
-        // Update with server data to ensure consistency
         const serverTransaction = mapTransactionResponse(res.data.transaction);
         setTransactions(prev => 
           prev.map(t => t.id === id ? serverTransaction : t)

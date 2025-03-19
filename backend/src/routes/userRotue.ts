@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { Role, User } from "../types/types";
 import { prisma } from "../index";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { config } from "dotenv";
+import { User } from "../types/types";
 
 config();
 export const userRoute = Router();
@@ -36,7 +36,6 @@ userRoute.post('/user/signup', async (req, res) => {
                 lastName,
                 email,
                 password: hashPassword,
-                role: Role.admin,
             }
         });
 
@@ -75,7 +74,7 @@ userRoute.post('/user/login', async (req, res) => {
         }
 
         const token = jwt.sign(
-            { email: user.email, role: user.role, companyId: company.id },
+            { email: user.email, role: user.role },
             secret,
             { expiresIn: "1h" }
         );

@@ -113,9 +113,15 @@ transactionRouter.put("/", authUser, async (req, res) => {
 // Get all transactions
 transactionRouter.get("/get_all", authUser, async (req, res) => {
     try {
-        const { companyName } = req.body;
+        const companyName = req.query.companyName as string; 
+
+        if (!companyName) {
+            res.status(400).json({ status: false, message: "Company name is required" });
+            return;
+        }
+
         const transactions = await prisma.transaction.findMany({
-            where: { company: companyName },
+            where: { company: { is: { name: companyName}} },
             select: {
                 id: true,
                 totalAmount: true,
