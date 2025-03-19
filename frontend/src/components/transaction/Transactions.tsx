@@ -7,10 +7,9 @@ import {
   Filter,
   ArrowUpDown,
   Edit,
-  DollarSign,
+  IndianRupee,
   Check,
-  Clock,
-  BellRing
+  Clock
 } from "lucide-react";
 import type { Transaction } from "../../context/TransactionContext";
 import AddTransactionModal from "./AddTransactionModal";
@@ -200,7 +199,7 @@ const Transactions = () => {
               </h3>
             </div>
             <div className="p-2 bg-white bg-opacity-20 rounded-lg">
-              <DollarSign size={24} className="text-white" />
+              <IndianRupee size={24} className="text-white" />
             </div>
           </div>
           <div className="mt-4 text-xs font-medium text-orange-100">
@@ -506,12 +505,6 @@ const Transactions = () => {
                           onClick={() => handleUpdateTransaction(transaction)}
                         >
                           <Edit size={16} />
-                        </button>
-                        <button
-                          className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-                          title="Send notification"
-                        >
-                          <BellRing size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteTransaction(transaction.id)}
