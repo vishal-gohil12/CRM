@@ -1,37 +1,46 @@
 import { Router } from "express";
 import { prisma } from "../index";
 import { config } from "dotenv";
-import { z } from "zod"; // For input validation
+import { z } from "zod";
 import nodemailer from "nodemailer";
-import "../controller/scheduleReminders";
 
 export const reminderRoute = Router();
 
 config();
 
-// Email transporter setup
+interface ReminderInterface {
+  id: string; 
+  createdAt: Date; 
+  customerId: string; 
+  datetime: Date; 
+  message: string; 
+  transactionId: string | null; 
+  status: string; 
+  type: string; 
+  priority: string;
+}
+
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || "smtp.example.com",
-  port: parseInt(process.env.EMAIL_PORT || "587"),
-  secure: process.env.EMAIL_SECURE === "true",
+  service: "gmail",  
   auth: {
     user: process.env.EMAIL_USER || "",
     pass: process.env.EMAIL_PASS || ""
   }
 });
 
-// Queue to manage reminders
-const reminderQueue = new Map();
+const reminderQueue = new Map<string, NodeJS.Timeout>();
 
-// Function to add reminder to queue
-async function addReminderToQueue(reminder) {
+async function addReminderToQueue(reminder: ReminderInterface) {
   try {
-    // Clear any existing timeout for this reminder
+    if (!reminder || !reminder.id || !reminder.datetime) {
+      console.error("Invalid reminder object:", reminder);
+      return;
+    }
+
     if (reminderQueue.has(reminder.id)) {
       clearTimeout(reminderQueue.get(reminder.id));
     }
 
-    // Get customer details
     const customer = await prisma.customer.findUnique({
       where: { id: reminder.customerId }
     });
@@ -41,57 +50,51 @@ async function addReminderToQueue(reminder) {
       return;
     }
 
-    // Calculate time until reminder should be sent
     const now = new Date();
     const reminderTime = new Date(reminder.datetime);
     const timeUntilReminder = reminderTime.getTime() - now.getTime();
 
-    // If reminder time is in the past, send immediately
     if (timeUntilReminder <= 0) {
       await sendReminderEmail(reminder, customer);
       return;
     }
 
-    // Schedule the reminder
     const timeoutId = setTimeout(async () => {
       await sendReminderEmail(reminder, customer);
-      
-      // Update reminder status to SENT
+
+      // Update the status to SENT instead of using a sent field
       await prisma.reminder.update({
         where: { id: reminder.id },
         data: { status: "SENT" }
       });
-      
-      // Remove from queue
+
       reminderQueue.delete(reminder.id);
     }, timeUntilReminder);
 
-    // Store the timeout reference
     reminderQueue.set(reminder.id, timeoutId);
-    
+
     console.log(`Reminder ${reminder.id} scheduled for ${reminderTime.toISOString()}`);
   } catch (error) {
     console.error("Error adding reminder to queue:", error);
   }
 }
 
-// Function to send reminder email
-async function sendReminderEmail(reminder, customer) {
+async function sendReminderEmail(reminder: { priority: string; message: any; datetime: string | number | Date; }, customer: { id: string; companyId: string; email: string; phone: string | null; createdAt: Date; remark: string | null; documents: string[]; gst_no: number; company_and_name: string; }) {
   try {
+    const priority = reminder.priority || "MEDIUM";
+
     const emailOptions = {
-      from: process.env.EMAIL_FROM || "reminders@example.com",
-      to: customer.email,
-      subject: `Reminder: ${reminder.priority} Priority`,
+      from: process.env.EMAIL_USER,
+      to: "vishalgohil1001@gmail.com",
+      subject: `Reminder: ${priority} Priority`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 5px;">
           <div style="background-color: #ff6b00; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
             <h2 style="margin: 0;">Reminder</h2>
           </div>
           <div style="padding: 20px;">
-            <p>Dear ${customer.name},</p>
+            <p>Dear ${customer.company_and_name},</p>
             <p>${reminder.message}</p>
-            <p>Priority: ${reminder.priority}</p>
-            <p>Scheduled for: ${new Date(reminder.datetime).toLocaleString()}</p>
             <p>Thank you for your attention to this matter.</p>
           </div>
           <div style="background-color: #f0f0f0; padding: 10px; border-radius: 0 0 5px 5px; text-align: center; font-size: 12px; color: #666;">
@@ -110,7 +113,6 @@ async function sendReminderEmail(reminder, customer) {
   }
 }
 
-// Define validation schema for reminder creation
 const createReminderSchema = z.object({
   customerId: z.string().uuid({ message: "Invalid customer ID format" }),
   transactionId: z.string().uuid({ message: "Invalid transaction ID format" }).nullable().optional(),
@@ -126,7 +128,6 @@ const createReminderSchema = z.object({
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional().default("MEDIUM")
 });
 
-// Get all reminders for a customer
 reminderRoute.get('/customer/:customerId', async (req, res) => {
   try {
     const { customerId } = req.params;
@@ -136,7 +137,8 @@ reminderRoute.get('/customer/:customerId', async (req, res) => {
     });
 
     if (!customer) {
-      return res.status(404).json({ status: false, error: "Customer not found" });
+      res.status(404).json({ status: false, error: "Customer not found" });
+      return;
     }
 
     const reminders = await prisma.reminder.findMany({
@@ -151,37 +153,35 @@ reminderRoute.get('/customer/:customerId', async (req, res) => {
   }
 });
 
-// Create a new reminder
 reminderRoute.post('/', async (req, res) => {
   try {
-    // Validate input using Zod
     const validationResult = createReminderSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-      return res.status(400).json({
+      res.status(400).json({
         status: false,
         error: "Validation failed",
         details: validationResult.error.format()
       });
+      return;
     }
 
     const { customerId, transactionId, datetime, message, type, priority } = validationResult.data;
 
-    // Check if customer exists
     const customer = await prisma.customer.findUnique({ where: { id: customerId } });
     if (!customer) {
-      return res.status(404).json({ status: false, error: "Customer not found" });
+      res.status(404).json({ status: false, error: "Customer not found" });
+      return;
     }
 
-    // Check if transaction exists if provided
     if (transactionId) {
       const transaction = await prisma.transaction.findUnique({ where: { id: transactionId } });
       if (!transaction) {
-        return res.status(404).json({ status: false, error: "Transaction not found" });
+        res.status(404).json({ status: false, error: "Transaction not found" });
+        return;
       }
     }
 
-    // Create the reminder
     const scheduledDate = new Date(datetime);
     const reminder = await prisma.reminder.create({
       data: {
@@ -189,13 +189,12 @@ reminderRoute.post('/', async (req, res) => {
         transactionId,
         datetime: scheduledDate,
         message,
-        type,
-        priority,
-        status: "PENDING"
+        status: "PENDING", // Use status field instead of sent
+        ...(type && { type }),
+        ...(priority && { priority })
       }
     });
 
-    // Add to processing queue
     await addReminderToQueue(reminder);
 
     res.status(201).json({
@@ -209,44 +208,43 @@ reminderRoute.post('/', async (req, res) => {
   }
 });
 
-// Update a reminder
 reminderRoute.put('/:reminderId', async (req, res) => {
   try {
     const { reminderId } = req.params;
     const { datetime, message, type, priority } = req.body;
 
-    // Check if reminder exists
     const existingReminder = await prisma.reminder.findUnique({
       where: { id: reminderId }
     });
 
     if (!existingReminder) {
-      return res.status(404).json({ status: false, error: "Reminder not found" });
+      res.status(404).json({ status: false, error: "Reminder not found" });
+      return;
     }
 
-    // Validate datetime if provided
     if (datetime) {
       const scheduledDate = new Date(datetime);
       if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
-        return res.status(400).json({ 
-          status: false, 
-          error: "Scheduled datetime must be valid and in the future" 
+        res.status(400).json({
+          status: false,
+          error: "Scheduled datetime must be valid and in the future"
         });
+        return;
       }
     }
 
-    // Update reminder
     const updatedReminder = await prisma.reminder.update({
       where: { id: reminderId },
       data: {
         ...(datetime && { datetime: new Date(datetime) }),
         ...(message && { message }),
         ...(type && { type }),
-        ...(priority && { priority })
+        ...(priority && { priority }),
+        // Reset status if rescheduling
+        ...(datetime && { status: "PENDING" })
       }
     });
 
-    // Update in queue if datetime changed
     if (datetime) {
       await addReminderToQueue(updatedReminder);
     }
@@ -262,27 +260,24 @@ reminderRoute.put('/:reminderId', async (req, res) => {
   }
 });
 
-// Delete a reminder
 reminderRoute.delete('/:reminderId', async (req, res) => {
   try {
     const { reminderId } = req.params;
 
-    // Check if reminder exists
     const existingReminder = await prisma.reminder.findUnique({
       where: { id: reminderId }
     });
 
     if (!existingReminder) {
-      return res.status(404).json({ status: false, error: "Reminder not found" });
+      res.status(404).json({ status: false, error: "Reminder not found" });
+      return;
     }
 
-    // Clear any scheduled reminder
     if (reminderQueue.has(reminderId)) {
       clearTimeout(reminderQueue.get(reminderId));
       reminderQueue.delete(reminderId);
     }
 
-    // Delete reminder
     await prisma.reminder.delete({
       where: { id: reminderId }
     });
@@ -297,19 +292,19 @@ reminderRoute.delete('/:reminderId', async (req, res) => {
   }
 });
 
-// Initialize existing reminders on startup
 async function initializeReminders() {
   try {
     const pendingReminders = await prisma.reminder.findMany({
-      where: { 
+      where: {
         status: "PENDING",
         datetime: { gte: new Date() }
       }
     });
-    
+
     console.log(`Initializing ${pendingReminders.length} pending reminders`);
-    
+
     for (const reminder of pendingReminders) {
+      if (!reminder) continue;
       await addReminderToQueue(reminder);
     }
   } catch (error) {
@@ -317,7 +312,6 @@ async function initializeReminders() {
   }
 }
 
-// Initialize reminders when the server starts
 initializeReminders();
 
 export { addReminderToQueue };

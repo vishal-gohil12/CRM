@@ -20,6 +20,7 @@ const UpdateTransactionModal = ({
 }: UpdateTransactionModalProps) => {
   const [formData, setFormData] = useState<{
     customerName: string;
+    customerEmail: string; // Added missing customerEmail field
     companyName: string;
     totalAmount: number;
     paidAmount: number;
@@ -27,6 +28,7 @@ const UpdateTransactionModal = ({
     payment_type: string;
   }>({
     customerName: "",
+    customerEmail: "", // Initialize with empty string
     companyName: "",
     totalAmount: 0,
     paidAmount: 0,
@@ -44,6 +46,7 @@ const UpdateTransactionModal = ({
     if (transaction) {
       setFormData({
         customerName: transaction.customerName,
+        customerEmail: transaction.customerEmail, // Add this line
         companyName: transaction.companyName,
         totalAmount: transaction.totalAmount,
         paidAmount: transaction.paidAmount,
@@ -74,9 +77,22 @@ const UpdateTransactionModal = ({
     setSuccess(false);
 
     try {
-      const response = await axios.put(
-        `${BACKEND_URL}/api/transactions/${transaction.id}`,
-        formData,
+      // Modified to align with TransactionContext API
+      // Instead of using direct axios call to update by ID
+      // We're now using the context's updateTransaction method
+      const updatedData = {
+        companyName: formData.companyName,
+        customerEmail: formData.customerEmail, // This is the key field needed by the backend
+        totalAmount: formData.totalAmount,
+        paidAmount: formData.paidAmount,
+        status: formData.status,
+        payment_type: formData.payment_type
+      };
+
+      // Use the API from context instead of direct axios call
+      const success = await axios.put(
+        `${BACKEND_URL}/api/transactions`, // Changed endpoint to match backend route
+        updatedData,
         {
           headers: {
             authorization: localStorage.getItem("token"),
@@ -84,13 +100,15 @@ const UpdateTransactionModal = ({
         }
       );
 
-      if (response.data.status) {
+      if (success.data.status) {
         setSuccess(true);
+        
         // Update the transactions with proper typing
         setTransactions((prev) =>
           prev.map((t) => (t.id === transaction.id ? {
             ...t,
             customerName: formData.customerName,
+            customerEmail: formData.customerEmail,
             companyName: formData.companyName,
             totalAmount: formData.totalAmount,
             paidAmount: formData.paidAmount,
@@ -99,11 +117,12 @@ const UpdateTransactionModal = ({
             pendingAmount: formData.totalAmount - formData.paidAmount
           } : t))
         );
+        
         setTimeout(() => {
           onClose();
         }, 1000);
       } else {
-        setError(response.data.message || "Failed to update transaction");
+        setError(success.data.message || "Failed to update transaction");
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -171,6 +190,21 @@ const UpdateTransactionModal = ({
                     required
                   />
                 </div>
+              </div>
+
+              {/* Add Customer Email field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer Email
+                </label>
+                <input
+                  type="email"
+                  name="customerEmail"
+                  value={formData.customerEmail}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

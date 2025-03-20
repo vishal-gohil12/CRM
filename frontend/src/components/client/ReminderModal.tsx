@@ -147,8 +147,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   };
   
   if (!isOpen) return null;
-  
-  // Format today's date for min attribute
+
   const today = new Date().toISOString().split('T')[0];
   
   return (

@@ -144,7 +144,6 @@ const CustomerList: React.FC = () => {
       return nameMatch || emailMatch || phoneMatch;
     })
     .sort((a, b) => {
-      // Handle potential undefined values
       const fieldA = a[sortBy as keyof Customer] || '';
       const fieldB = b[sortBy as keyof Customer] || '';
       

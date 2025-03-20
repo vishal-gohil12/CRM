@@ -19,7 +19,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 }) => {
   const { customers } = useCustomers();
   const { selectedCompany } = useCompany();
-  
+
   const [formData, setFormData] = useState({
     company_and_name: "",
     email: "",
@@ -27,9 +27,9 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     gst_no: 0,
     remark: "",
     documents: [] as string[],
-    companyName: selectedCompany?.name || "", 
+    companyName: selectedCompany?.name || "",
   });
-  
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,7 +40,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
 
     if (!formData.company_and_name.trim())
       newErrors.company_and_name = "Company and Name is required";
-    
+
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!emailRegex.test(formData.email)) {
@@ -59,8 +59,6 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     if (isNaN(formData.gst_no) || formData.gst_no < 0) {
       newErrors.gst_no = "GST must be a valid number";
     }
-    
-    // Validate company selection
     if (!formData.companyName) {
       newErrors.companyName = "Please select a company profile";
     }
@@ -81,9 +79,9 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     try {
       const payload = {
         ...formData,
-        companyName: formData.companyName.toLowerCase(), 
+        companyName: formData.companyName.toLowerCase(),
       };
-      
+
       const response = await axios.post(
         `${BACKEND_URL}/api/customer/add_customer`,
         payload,
@@ -131,25 +129,22 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
               {selectedCompany ? (
                 <div className="flex items-center p-2 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="w-8 h-8 bg-orange-100 rounded-full mr-3 flex items-center justify-center overflow-hidden">
-                    {selectedCompany.logo ? (
-                      <img 
-                        src={selectedCompany.logo} 
-                        alt={selectedCompany.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Building className="w-5 h-5 text-orange-500" />
-                    )}
+                    <Building className="w-5 h-5 text-orange-500" />
                   </div>
-                  <span className="font-medium text-gray-800">{selectedCompany.name}</span>
+                  <span className="font-medium text-gray-800">
+                    {selectedCompany.name}
+                  </span>
                 </div>
               ) : (
                 <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                  No company selected. Please select a company from your profile first.
+                  No company selected. Please select a company from your profile
+                  first.
                 </div>
               )}
               {errors.companyName && (
-                <p className="text-red-500 text-xs mt-1">{errors.companyName}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.companyName}
+                </p>
               )}
             </div>
 

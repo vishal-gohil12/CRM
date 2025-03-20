@@ -61,7 +61,9 @@ model Reminder {
   customerId    String
   datetime      DateTime
   message       String
-  sent          Boolean      @default(false)
+  status        String       @default("PENDING")
+  type          String       @default("EMAIL")   
+  priority      String       @default("MEDIUM")  
   createdAt     DateTime     @default(now())
   transactionId String?
   customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
