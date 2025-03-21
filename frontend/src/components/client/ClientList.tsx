@@ -1,18 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, useCustomers } from "../../context/clientContext";
-import { FiUser, FiMail, FiPhone, FiFileText, FiCalendar, FiSearch, FiChevronDown, FiChevronUp, FiPlus, FiBell } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiSearch, FiChevronDown, FiChevronUp, FiPlus, FiBell, FiEdit, FiTrash2, FiPaperclip } from 'react-icons/fi';
 import { AddCustomerModal } from './AddClientModal';
 import ReminderModal from './ReminderModal';
+import { UpdateCustomerModal } from './UpdateCustomerModal';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { DocumentUploadModal } from './DocumentUploadModal';
 
 interface CustomerCardProps {
   customer: Customer;
   onClick: () => void;
   isExpanded: boolean;
   onReminderClick: () => void;
+  onRefresh: () => void;
 }
 
-const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onClick, isExpanded, onReminderClick }) => {  
-  const documents = customer.documents || [];
+const CustomerCard: React.FC<CustomerCardProps> = ({ 
+  customer, 
+  onClick, 
+  isExpanded, 
+  onReminderClick,
+  onRefresh
+}) => {
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
+  const [isDocUploadModalOpen, setIsDocUploadModalOpen] = useState<boolean>(false);
   
   return (
     <div 
@@ -51,16 +63,6 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onClick, isExpand
               <FiPhone className="text-orange-500 mr-2" />
               <span className="text-sm text-gray-700">Phone: {customer.phone || 'Not provided'}</span>
             </div>
-            <div className="flex items-center">
-              <FiFileText className="text-orange-500 mr-2" />
-              <span className="text-sm text-gray-700">Documents: {documents.length}</span>
-            </div>
-            <div className="flex items-center">
-              <FiCalendar className="text-orange-500 mr-2" />
-              <span className="text-sm text-gray-700">
-                Created: {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : 'Unknown'}
-              </span>
-            </div>
           </div>
           
           {customer.remark && (
@@ -69,20 +71,80 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onClick, isExpand
             </div>
           )}
 
-          <div className="mt-4 flex justify-end">
-            <button 
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReminderClick();
-              }}
-            >
-              <FiBell size={18} />
-              <span>Set Reminder</span>
-            </button>
+          <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
+            <div className="flex gap-2 mb-2 sm:mb-0">
+              <button 
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsUpdateModalOpen(true);
+                }}
+              >
+                <FiEdit size={16} />
+                <span>Update</span>
+              </button>
+              
+              <button 
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDeleteModalOpen(true);
+                }}
+              >
+                <FiTrash2 size={16} />
+                <span>Delete</span>
+              </button>
+            </div>
+            
+            <div className="flex gap-2">
+              <button 
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDocUploadModalOpen(true);
+                }}
+              >
+                <FiPaperclip size={16} />
+                <span>Documents</span>
+              </button>
+              
+              <button 
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReminderClick();
+                }}
+              >
+                <FiBell size={16} />
+                <span>Set Reminder</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <UpdateCustomerModal 
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        customer={customer}
+        onCustomerUpdated={onRefresh}
+      />
+
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        customerId={customer.id}
+        customerName={customer.company_and_name}
+        onConfirmDelete={onRefresh}
+      />
+
+      <DocumentUploadModal 
+        isOpen={isDocUploadModalOpen}
+        onClose={() => setIsDocUploadModalOpen(false)}
+        customerId={customer.id}
+        onDocumentUploaded={onRefresh}
+      />
     </div>
   );
 };
@@ -228,6 +290,7 @@ const CustomerList: React.FC = () => {
                 onClick={() => toggleExpand(customer.id)}
                 isExpanded={expandedCustomerId === customer.id}
                 onReminderClick={() => handleReminderClick(customer.id)}
+                onRefresh={refreshCustomers}
               />
             ))}
           </div>

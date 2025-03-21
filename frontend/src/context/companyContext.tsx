@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-// Define the Company interface
 export interface Company {
   id: number;
   name: string;
 }
 
-// Define the context type
 interface CompanyContextType {
   companies: Company[];
   selectedCompany: Company | null;
@@ -16,10 +14,8 @@ interface CompanyContextType {
   getCompanyByName: (name: string) => Company | undefined;
 }
 
-// Create the context with default values
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
-// Sample initial companies data
 const initialCompanies: Company[] = [
   { id: 1, name: 'Sunfiber' },
   { id: 2, name: 'Jyoti trading' },
@@ -43,14 +39,12 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     return companies.find((company) => company.id === id);
   };
 
-  // Get company by name (case insensitive)
   const getCompanyByName = (name: string) => {
     return companies.find(
       (company) => company.name.toLowerCase() === name.toLowerCase()
     );
   };
 
-  // Context value
   const value = {
     companies,
     selectedCompany,
@@ -67,7 +61,6 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   );
 };
 
-// Custom hook for using the company context
 // eslint-disable-next-line react-refresh/only-export-components
 export const useCompany = () => {
   const context = useContext(CompanyContext);

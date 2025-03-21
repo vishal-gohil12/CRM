@@ -5,7 +5,6 @@ import { BACKEND_URL } from "../backendUrl";
 import { useUser } from "./authContext";
 import { useCompany } from "./companyContext";
 
-// Define the Customer type based on the provided model
 export interface Customer {
   id: string;
   companyId: string;
@@ -38,7 +37,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
 
     if (!selectedCompany) {
-      setCustomers([]); // Or handle as needed
+      setCustomers([]);
       return;
     }
 

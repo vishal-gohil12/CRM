@@ -1,41 +1,49 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, Building, CheckCircle, AlertCircle } from 'lucide-react';
-import axios from 'axios';
-import { BACKEND_URL } from '../../backendUrl';
-import { useUser } from '../../context/authContext';
-import { useCompany } from '../../context/companyContext';
-import toast from 'react-hot-toast';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  LogIn,
+  Building,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import axios from "axios";
+import { BACKEND_URL } from "../../backendUrl";
+import { useUser } from "../../context/authContext";
+import { useCompany } from "../../context/companyContext";
+import toast from "react-hot-toast";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCompanySelector, setShowCompanySelector] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
     password?: string;
     company?: string;
   }>({});
-  
+
   const { user, setUser } = useUser();
   const { companies, selectedCompany, setSelectedCompany } = useCompany();
-  
+
   const navigate = useNavigate();
 
   const handleCompanySelect = (company: any) => {
     setSelectedCompany(company);
     setShowCompanySelector(false);
     // Clear any company-related errors when a company is selected
-    setFieldErrors(prev => ({ ...prev, company: undefined }));
+    setFieldErrors((prev) => ({ ...prev, company: undefined }));
   };
 
   const validateForm = () => {
     const errors: typeof fieldErrors = {};
     let isValid = true;
-    
+
     if (!email) {
       errors.email = "Email is required";
       isValid = false;
@@ -43,17 +51,17 @@ const Login = () => {
       errors.email = "Please enter a valid email address";
       isValid = false;
     }
-    
+
     if (!password) {
       errors.password = "Password is required";
       isValid = false;
     }
-    
+
     if (!selectedCompany) {
       errors.company = "Please select your company";
       isValid = false;
     }
-    
+
     setFieldErrors(errors);
     return isValid;
   };
@@ -61,52 +69,62 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
-    const companyName = selectedCompany?.name || '';
-    
-    const loginData = { 
-      email, 
-      password, 
-      companyName: companyName.toLowerCase() 
+
+    const companyName = selectedCompany?.name || "";
+
+    const loginData = {
+      email,
+      password,
+      companyName: companyName.toLowerCase(),
     };
-    
+
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/user/login`, loginData);
-      if(response.data.status) {
+      const response = await axios.post(
+        `${BACKEND_URL}/api/user/login`,
+        loginData
+      );
+      if (response.data.status) {
         setUser({ email: email, role: response.data.role });
         localStorage.setItem("token", response.data.token);
-        
+
         if (selectedCompany) {
-          localStorage.setItem("selectedCompanyId", selectedCompany.id.toString());
+          localStorage.setItem(
+            "selectedCompanyId",
+            selectedCompany.id.toString()
+          );
         }
-        
+
         toast.success("Login successful! Redirecting...");
         navigate("/");
       } else {
-        setErrorMessage(response.data.error || "There was an error while logging in.");
+        setErrorMessage(
+          response.data.error || "There was an error while logging in."
+        );
       }
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       if (error.response?.status === 404) {
-        setErrorMessage("Invalid credentials. Please check your email and password.");
+        setErrorMessage(
+          "Invalid credentials. Please check your email and password."
+        );
         setFieldErrors({
           email: "Email or password is incorrect",
-          password: "Email or password is incorrect"
+          password: "Email or password is incorrect",
         });
       } else if (error.response?.status === 401) {
         setErrorMessage("You're not authorized to access this company.");
         setFieldErrors({
-          company: "You don't have access to this company"
+          company: "You don't have access to this company",
         });
       } else {
         setErrorMessage(
           error.response?.data?.error ||
-          error.response?.data?.message ||
-          "An unexpected error occurred. Please try again later."
+            error.response?.data?.message ||
+            "An unexpected error occurred. Please try again later."
         );
       }
     } finally {
@@ -116,12 +134,12 @@ const Login = () => {
 
   useEffect(() => {
     if (user && user.email !== undefined) {
-      navigate('/');
+      navigate("/");
     }
-    
+
     const savedCompanyId = localStorage.getItem("selectedCompanyId");
     if (savedCompanyId && !selectedCompany) {
-      const company = companies.find(c => c.id === parseInt(savedCompanyId));
+      const company = companies.find((c) => c.id === parseInt(savedCompanyId));
       if (company) {
         setSelectedCompany(company);
       }
@@ -139,9 +157,9 @@ const Login = () => {
           Welcome Back!
         </h2>
         <p className="text-xs text-center text-gray-600 mb-4">
-          New here?{' '}
-          <Link 
-            to={'/signup'}
+          New here?{" "}
+          <Link
+            to={"/signup"}
             className="font-semibold text-orange-500 hover:text-orange-700 transition-colors duration-200"
           >
             Create an account
@@ -160,7 +178,10 @@ const Login = () => {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-xs font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="block text-xs font-medium text-gray-700"
+            >
               Email Address
             </label>
             <input
@@ -173,11 +194,13 @@ const Login = () => {
               onChange={(e) => {
                 setEmail(e.target.value);
                 if (fieldErrors.email) {
-                  setFieldErrors(prev => ({ ...prev, email: undefined }));
+                  setFieldErrors((prev) => ({ ...prev, email: undefined }));
                 }
               }}
               className={`mt-1 w-full px-3 py-2 border ${
-                fieldErrors.email ? 'border-red-300 ring-1 ring-red-300' : 'border-gray-300'
+                fieldErrors.email
+                  ? "border-red-300 ring-1 ring-red-300"
+                  : "border-gray-300"
               } rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-gray-400 text-xs transition duration-200`}
               placeholder="you@example.com"
             />
@@ -186,42 +209,65 @@ const Login = () => {
             )}
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-xs font-medium text-gray-700">
+          <div className=" relative">
+            <label
+              htmlFor="password"
+              className="block text-xs font-medium text-gray-700"
+            >
               Password
             </label>
             <input
               id="password"
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               required
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
                 if (fieldErrors.password) {
-                  setFieldErrors(prev => ({ ...prev, password: undefined }));
+                  setFieldErrors((prev) => ({ ...prev, password: undefined }));
                 }
               }}
               className={`mt-1 w-full px-3 py-2 border ${
-                fieldErrors.password ? 'border-red-300 ring-1 ring-red-300' : 'border-gray-300'
+                fieldErrors.password
+                  ? "border-red-300 ring-1 ring-red-300"
+                  : "border-gray-300"
               } rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-gray-400 text-xs transition duration-200`}
               placeholder="••••••••"
             />
+            
             {fieldErrors.password && (
-              <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {fieldErrors.password}
+              </p>
             )}
+             <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-3 top-5  flex items-center text-gray-500"
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
           </div>
-
           <div>
-            <label htmlFor="companyName" className="block text-xs font-medium text-gray-700">
+            <label
+              htmlFor="companyName"
+              className="block text-xs font-medium text-gray-700"
+            >
               Company Profile
             </label>
             <div className="relative">
-              <div 
+              <div
                 onClick={() => setShowCompanySelector(!showCompanySelector)}
                 className={`mt-1 w-full px-3 py-2 border ${
-                  fieldErrors.company ? 'border-red-300 ring-1 ring-red-300' : 'border-gray-300'
+                  fieldErrors.company
+                    ? "border-red-300 ring-1 ring-red-300"
+                    : "border-gray-300"
                 } rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-gray-400 text-xs transition duration-200 cursor-pointer flex items-center justify-between`}
               >
                 {selectedCompany ? (
@@ -234,28 +280,43 @@ const Login = () => {
                 ) : (
                   <span className="text-gray-400">Select your company</span>
                 )}
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                <svg
+                  className="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
                 </svg>
               </div>
-              
+
               {fieldErrors.company && (
-                <p className="mt-1 text-xs text-red-600">{fieldErrors.company}</p>
+                <p className="mt-1 text-xs text-red-600">
+                  {fieldErrors.company}
+                </p>
               )}
-              
+
               {showCompanySelector && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                   <div className="p-2">
-                    <h3 className="text-xs font-semibold text-gray-700 mb-2">Select Company</h3>
+                    <h3 className="text-xs font-semibold text-gray-700 mb-2">
+                      Select Company
+                    </h3>
                     {companies.map((company) => (
-                      <div 
+                      <div
                         key={company.id}
                         onClick={() => handleCompanySelect(company)}
                         className="p-2 hover:bg-orange-50 rounded-md cursor-pointer flex items-center justify-between transition-colors duration-150"
                       >
                         <div className="flex items-center">
                           <div className="w-6 h-6 bg-gray-200 rounded-full mr-2 flex items-center justify-center overflow-hidden">
-                              <Building className="w-4 h-4 text-gray-600" />
+                            <Building className="w-4 h-4 text-gray-600" />
                           </div>
                           <span className="text-sm">{company.name}</span>
                         </div>
@@ -278,7 +339,10 @@ const Login = () => {
                 type="checkbox"
                 className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-xs text-gray-700">
+              <label
+                htmlFor="remember-me"
+                className="ml-2 block text-xs text-gray-700"
+              >
                 Remember me
               </label>
             </div>
@@ -293,9 +357,9 @@ const Login = () => {
           <button
             type="submit"
             className={`w-full py-2 px-4 border border-transparent rounded-lg shadow-md text-white font-semibold ${
-              loading || !selectedCompany 
-                ? 'bg-orange-300 cursor-not-allowed' 
-                : 'bg-orange-500 hover:bg-orange-600'
+              loading || !selectedCompany
+                ? "bg-orange-300 cursor-not-allowed"
+                : "bg-orange-500 hover:bg-orange-600"
             } focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-sm transition duration-200 flex justify-center items-center`}
             disabled={loading || !selectedCompany}
           >

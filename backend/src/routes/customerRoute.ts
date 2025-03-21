@@ -106,7 +106,7 @@ customerRoute.get('/get_all', authUser, async (req, res)=> {
 
 customerRoute.put("/update", async (req, res) => {
     try {
-        const { id, company_and_name, email, phone, gst_no, remark, companyName } : Customer = req.body;
+        const { company_and_name, email, phone, gst_no, remark, companyName } : Customer = req.body;
         let updateData : Prisma.CustomerUpdateInput = { company_and_name, email, phone, remark, gst_no };
         if(companyName) {
             const company = await prisma.company.findUnique({
@@ -124,7 +124,7 @@ customerRoute.put("/update", async (req, res) => {
         }
 
         const updatedCustomer = await prisma.customer.update({
-            where: { id },
+            where: { email },
             data: updateData,
         });
 
@@ -145,8 +145,15 @@ customerRoute.put("/update", async (req, res) => {
 customerRoute.delete("/delete", async (req, res) => {
     try {
         const { id } = req.body;
+        if(!id) {
+            res.status(400).json({
+                status: false,
+                message: "Customer ID is required",
+            });
+            return;
+        }
         const customer = await prisma.customer.findUnique({
-            where: {id}
+            where: { id }
         });
 
         if(!customer) {
