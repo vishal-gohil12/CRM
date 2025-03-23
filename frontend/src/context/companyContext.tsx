@@ -18,11 +18,11 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 const initialCompanies: Company[] = [
   { id: 1, name: 'Sunfiber' },
-  { id: 2, name: 'Jyoti trading' },
-  { id: 3, name: 'GlobalTrade' },
-  { id: 4, name: 'InnovateX' },
-  { id: 5, name: 'EcoSolutions' },
-  { id: 6, name: 'MegaIndustries' },
+  { id: 2, name: 'Jyoti Trading' },
+  { id: 3, name: 'Laxmi Engineering' },
+  { id: 4, name: 'Pooja Engineering' },
+  { id: 5, name: 'The Blue Beast' },
+  { id: 6, name: 'V R Engineering' },
 ];
 
 // Create provider component

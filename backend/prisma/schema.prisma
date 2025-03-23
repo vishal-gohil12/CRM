@@ -33,12 +33,25 @@ model Customer {
   phone            String?
   createdAt        DateTime      @default(now())
   remark           String?
-  documents        String[]
+  documents        Document[]
   gst_no           Int           @default(0)
   company_and_name String
   company          Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   reminder         Reminder[]
   transactions     Transaction[]
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  customerId String
+  fileName   String
+  filePath   String
+  cloudinaryId String
+  fileType     String?  // Add this field to store the MIME type
+  fileSize     Int? 
+  uploadedAt DateTime @default(now())
+
+  customer   Customer @relation(fields: [customerId], references: [id])
 }
 
 model Transaction {
@@ -61,11 +74,12 @@ model Reminder {
   customerId    String
   datetime      DateTime
   message       String
-  status        String       @default("PENDING")
-  type          String       @default("EMAIL")   
-  priority      String       @default("MEDIUM")  
   createdAt     DateTime     @default(now())
   transactionId String?
+  recipient     String       @default("company")
+  priority      String       @default("MEDIUM")
+  status        String       @default("PENDING")
+  type          String       @default("EMAIL")
   customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }

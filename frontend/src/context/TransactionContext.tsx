@@ -5,7 +5,6 @@ import { toast } from 'react-hot-toast';
 import { useUser } from './authContext';
 import { useCompany } from './companyContext';
 
-// Updated backend response interfaces
 interface Customer {
   id: string;
   companyId: string;
@@ -25,7 +24,6 @@ interface Company {
   createdAt: string;
 }
 
-// Backend transaction response
 interface TransactionResponse {
   id: string;
   companyId: string;
@@ -40,7 +38,6 @@ interface TransactionResponse {
   company: Company;
 }
 
-// Frontend Transaction model
 export interface Transaction {
   id: string;
   companyName: string;

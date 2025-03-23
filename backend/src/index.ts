@@ -7,6 +7,7 @@ import { userRoute } from "./routes/userRotue";
 import { customerRoute } from "./routes/customerRoute";
 import { transactionRouter } from "./routes/transactionsRoute";
 import { reminderRoute } from "./routes/reminderRoute";
+import { documentRoute } from "./routes/documentRoute";
 
 config();
 const app = express();
@@ -23,6 +24,7 @@ app.use('/api/', userRoute);
 app.use('/api/customer', customerRoute);
 app.use('/api/transactions', transactionRouter);
 app.use('/api/reminders', reminderRoute);
+app.use("/api/customer/docs", documentRoute);
 
 app.get('/', (req, res)=> {
     res.send("hello world");

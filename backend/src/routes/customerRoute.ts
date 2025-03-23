@@ -3,6 +3,10 @@ import { authUser } from "../middleware/auth";
 import { Customer } from "../types/types";
 import { prisma } from "..";
 import { Prisma } from "@prisma/client";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { v4 as uuidv4 } from "uuid";
 
 export const customerRoute = Router();
 

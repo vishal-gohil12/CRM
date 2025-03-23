@@ -61,8 +61,6 @@ async function addReminderToQueue(reminder: ReminderInterface) {
 
     const timeoutId = setTimeout(async () => {
       await sendReminderEmail(reminder, customer);
-
-      // Update the status to SENT instead of using a sent field
       await prisma.reminder.update({
         where: { id: reminder.id },
         data: { status: "SENT" }
@@ -79,13 +77,16 @@ async function addReminderToQueue(reminder: ReminderInterface) {
   }
 }
 
-async function sendReminderEmail(reminder: { priority: string; message: any; datetime: string | number | Date; }, customer: { id: string; companyId: string; email: string; phone: string | null; createdAt: Date; remark: string | null; documents: string[]; gst_no: number; company_and_name: string; }) {
+async function sendReminderEmail(reminder: { priority: string; message: any; datetime: string | number | Date; recipient?: string; }, customer: { id: string; companyId: string; email: string; phone: string | null; createdAt: Date; remark: string | null; documents?: Document[]; gst_no: number; company_and_name: string; }) {
   try {
     const priority = reminder.priority || "MEDIUM";
+    const recipient = reminder.recipient || "company";
+
+    const emailTo = recipient === "admin" ? process.env.ADMIN_EMAIL || "21it039@charusat.edu.in" : customer.email;
 
     const emailOptions = {
       from: process.env.EMAIL_USER,
-      to: "vishalgohil1001@gmail.com",
+      to: emailTo,
       subject: `Reminder: ${priority} Priority`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 5px;">
@@ -93,7 +94,10 @@ async function sendReminderEmail(reminder: { priority: string; message: any; dat
             <h2 style="margin: 0;">Reminder</h2>
           </div>
           <div style="padding: 20px;">
-            <p>Dear ${customer.company_and_name},</p>
+            <p>Dear  ${recipient === "admin" 
+              ? `<p>Reminder for customer: ${customer.company_and_name}</p>` 
+              : `<p>Dear ${customer.company_and_name},</p>`
+            },</p>
             <p>${reminder.message}</p>
             <p>Thank you for your attention to this matter.</p>
           </div>
@@ -105,7 +109,7 @@ async function sendReminderEmail(reminder: { priority: string; message: any; dat
     };
 
     const info = await transporter.sendMail(emailOptions);
-    console.log(`Reminder email sent to ${customer.email}, messageId: ${info.messageId}`);
+    console.log(`Reminder email sent to ${emailTo}, messageId: ${info.messageId}`);
     return info;
   } catch (error) {
     console.error("Error sending reminder email:", error);
@@ -125,7 +129,8 @@ const createReminderSchema = z.object({
   ),
   message: z.string().min(1, { message: "Message cannot be empty" }).max(500, { message: "Message too long" }),
   type: z.enum(["SMS", "EMAIL", "PUSH"]).optional().default("EMAIL"),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional().default("MEDIUM")
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional().default("MEDIUM"),
+  recipient: z.enum(["company", "admin"]).optional().default("company")
 });
 
 reminderRoute.get('/customer/:customerId', async (req, res) => {
@@ -166,7 +171,7 @@ reminderRoute.post('/', async (req, res) => {
       return;
     }
 
-    const { customerId, transactionId, datetime, message, type, priority } = validationResult.data;
+    const { customerId, transactionId, datetime, message, type, priority, recipient } = validationResult.data;
 
     const customer = await prisma.customer.findUnique({ where: { id: customerId } });
     if (!customer) {
@@ -189,9 +194,10 @@ reminderRoute.post('/', async (req, res) => {
         transactionId,
         datetime: scheduledDate,
         message,
-        status: "PENDING", // Use status field instead of sent
+        status: "PENDING", 
         ...(type && { type }),
-        ...(priority && { priority })
+        ...(priority && { priority }),
+        ...(recipient && { recipient })
       }
     });
 
@@ -240,7 +246,6 @@ reminderRoute.put('/:reminderId', async (req, res) => {
         ...(message && { message }),
         ...(type && { type }),
         ...(priority && { priority }),
-        // Reset status if rescheduling
         ...(datetime && { status: "PENDING" })
       }
     });
@@ -300,7 +305,7 @@ async function initializeReminders() {
         datetime: { gte: new Date() }
       }
     });
-
+    
     console.log(`Initializing ${pendingReminders.length} pending reminders`);
 
     for (const reminder of pendingReminders) {

@@ -29,6 +29,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const clearUser = () =>{
         setUserState(null);
+        localStorage.removeItem("token");
     }
 
     useEffect(() => {

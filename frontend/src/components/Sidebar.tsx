@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   
   const adminMenuItems = [
     { id: 'company', label: 'Company', icon: BookUser },
-    { id: 'logout', label: 'Log out', icon: LogOut },
+    { id: 'Log out', label: 'Log out', icon: LogOut },
   ];
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';

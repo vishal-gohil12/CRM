@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {FiPaperclip } from 'react-icons/fi';
 import axios from 'axios';
-import { BACKEND_URL } from '../../backendUrl';
+import { BACKEND_URL } from '../../../backendUrl';
 import toast from 'react-hot-toast';
 
 interface DocumentUploadModalProps {
@@ -37,7 +37,7 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ isOpen
 
     try {
       const response = await axios.post(
-        `${BACKEND_URL}/api/customer/upload-document`,
+        `${BACKEND_URL}/api/customer/docs/upload-document`,
         formData,
         {
           headers: {

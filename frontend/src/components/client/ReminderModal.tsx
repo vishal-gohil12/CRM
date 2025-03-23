@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCustomers, Customer } from "../../context/clientContext";
 import { useTransactions, Transaction } from "../../context/TransactionContext";
-import { FiClock, FiCalendar, FiMessageSquare, FiX, FiSend, FiChevronDown } from 'react-icons/fi';
+import { FiClock, FiCalendar, FiMessageSquare, FiX, FiSend, FiChevronDown, FiUser, FiUsers } from 'react-icons/fi';
 import axios from 'axios';
 import { BACKEND_URL } from '../../backendUrl';
 import toast from 'react-hot-toast';
@@ -32,6 +32,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   const { customers } = useCustomers();
   const { transactions } = useTransactions();
   const [showCustomerDropdown, setShowCustomerDropdown] = useState<boolean>(false);
+  const [reminderRecipient, setReminderRecipient] = useState<'company' | 'admin'>('company');
 
   // Pre-fill customer if provided
   useEffect(() => {
@@ -45,7 +46,6 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId, customers, transactions]);
 
-  // Pre-fill transaction if provided
   useEffect(() => {
     if (transactionId && customerTransactions.length > 0) {
       const transaction = customerTransactions.find(t => t.id === transactionId);
@@ -56,7 +56,6 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   }, [transactionId, customerTransactions]);
 
   const filterCustomerTransactions = (id: string) => {
-    // Filter transactions from context based on customer email
     const customer = customers.find(c => c.id === id);
     if (customer && customer.email) {
       const filteredTransactions = transactions.filter(t => 
@@ -112,7 +111,8 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
         customerId: selectedCustomer.id,
         transactionId: selectedTransaction?.id || null,
         datetime: dateTime.toISOString(),
-        message
+        message,
+        recipient: reminderRecipient // Add recipient to the payload
       };
       
       const response = await axios.post(`${BACKEND_URL}/api/reminders`, reminderData);
@@ -144,6 +144,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
     setTime('');
     setSelectedCustomer(null);
     setSelectedTransaction(null);
+    setReminderRecipient('company');
   };
   
   if (!isOpen) return null;
@@ -153,7 +154,6 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all animate-fadeIn">
-        {/* Header */}
         <div className="bg-orange-500 px-6 py-4 flex items-center justify-between">
           <h2 className="text-white text-lg font-semibold flex items-center">
             <FiClock className="mr-2" />
@@ -166,10 +166,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             <FiX size={20} />
           </button>
         </div>
-        
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6">
-          {/* Customer Selection */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Customer
@@ -216,8 +213,6 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               )}
             </div>
           </div>
-          
-          {/* Transaction Selection (Optional) */}
           {selectedCustomer && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -264,8 +259,49 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               </div>
             </div>
           )}
-          
-          {/* Message */}
+
+          {/* New Reminder Recipient Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Reminder Recipient
+            </label>
+            <div className="flex gap-3">
+              <div
+                onClick={() => setReminderRecipient('company')}
+                className={`flex-1 p-3 border rounded-lg cursor-pointer transition-all flex flex-col items-center ${
+                  reminderRecipient === 'company' 
+                    ? 'border-orange-500 bg-orange-50 shadow-sm' 
+                    : 'border-gray-300 hover:border-orange-300'
+                }`}
+              >
+                <FiUsers size={24} className={`${reminderRecipient === 'company' ? 'text-orange-500' : 'text-gray-500'} mb-2`} />
+                <span className={`text-sm font-medium ${reminderRecipient === 'company' ? 'text-orange-700' : 'text-gray-600'}`}>
+                  Send to Company
+                </span>
+                <span className="text-xs text-gray-500 mt-1 text-center">
+                  Notify the customer
+                </span>
+              </div>
+              
+              <div
+                onClick={() => setReminderRecipient('admin')}
+                className={`flex-1 p-3 border rounded-lg cursor-pointer transition-all flex flex-col items-center ${
+                  reminderRecipient === 'admin' 
+                    ? 'border-orange-500 bg-orange-50 shadow-sm' 
+                    : 'border-gray-300 hover:border-orange-300'
+                }`}
+              >
+                <FiUser size={24} className={`${reminderRecipient === 'admin' ? 'text-orange-500' : 'text-gray-500'} mb-2`} />
+                <span className={`text-sm font-medium ${reminderRecipient === 'admin' ? 'text-orange-700' : 'text-gray-600'}`}>
+                  Send to Myself
+                </span>
+                <span className="text-xs text-gray-500 mt-1 text-center">
+                  Reminder for admin only
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Reminder Message
@@ -279,8 +315,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               required
             />
           </div>
-          
-          {/* Date and Time */}
+
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -309,7 +344,6 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             </div>
           </div>
           
-          {/* Actions */}
           <div className="flex justify-end space-x-3">
             <button
               type="button"
@@ -327,7 +361,8 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-2"></div>
               ) : (
                 <>
-                  <FiSend className="mr-2" /> Create Reminder
+                  <FiSend className="mr-2" /> 
+                  {reminderRecipient === 'company' ? 'Send to Company' : 'Create Self-Reminder'}
                 </>
               )}
             </button>

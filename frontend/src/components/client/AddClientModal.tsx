@@ -12,6 +12,8 @@ interface AddCustomerModalProps {
   onCustomerAdded: () => void;
 }
 
+
+
 export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   isOpen,
   onClose,
