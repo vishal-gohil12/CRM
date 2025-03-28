@@ -10,7 +10,7 @@ export interface Customer {
   companyId: string;
   company_and_name: string;
   email: string;
-  gst_no: number;
+  gst_no: string;
   phone?: string;
   remark?: string;
   documents: string[];

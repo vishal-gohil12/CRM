@@ -10,6 +10,7 @@ export interface Company {
   id: string;
   name: string;
   industry: string;
+  email?: string;
   customers: Customer[];
   transactions: Transaction[];
 }
@@ -28,7 +29,7 @@ export default function CompanyList() {
   useEffect(() => {
     fetchCompanies();
   }, []);
-
+  console.log(companies);
   const fetchCompanies = async () => {
     setLoading(true);
     try {
@@ -93,7 +94,8 @@ export default function CompanyList() {
           aValue = a[sortConfig.key];
           bValue = b[sortConfig.key];
         }
-        
+        if (aValue === undefined || bValue === undefined) return 0;
+
         if (aValue < bValue) {
           return sortConfig.direction === "ascending" ? -1 : 1;
         }

@@ -15,6 +15,7 @@ import { useUser } from "../../context/authContext";
 import { useCompany } from "../../context/companyContext";
 import toast from "react-hot-toast";
 
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -347,7 +348,7 @@ const Login = () => {
               </label>
             </div>
             <Link
-              to="/forgot-password"
+              to="/forgot"
               className="text-xs font-medium text-orange-500 hover:text-orange-700 transition-colors duration-200"
             >
               Forgot your password?

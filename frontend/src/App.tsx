@@ -12,6 +12,8 @@ import { CustomerProvider } from "./context/clientContext";
 import { TransactionProvider } from "./context/TransactionContext";
 import CompanyList from "./components/company/CompanyList";
 import { CompanyProvider } from "./context/companyContext";
+import ForgotPassword from "./components/auth/ForgotPass";
+import AdminUserCreation from "./components/auth/admin/AdminUserCreation";
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState("clients");
@@ -113,7 +115,8 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-
+        <Route path="/forgot" element={<ForgotPassword />} />
+        <Route path="/admin" element={<AdminUserCreation />} />
         {/* Protected Routes */}
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<AppContent />} />

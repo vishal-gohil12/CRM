@@ -4,23 +4,25 @@ export type User = {
     email: string;
     password: string;
     companyName: string;
+    role: Role
 }
 
 export type Company = {
     name: string;
     industry: string;
+    email?: string;
 }
 
 export enum Role {
     admin = "admin",
-    employee = "employee"
+   user = "user"
 }
 
 export type Customer = {
     id?:string;
     company_and_name: string;
     email: string;
-    gst_no: number;
+    gst_no: string;
     phone?: string;
     remark?: string;
     companyName: string;

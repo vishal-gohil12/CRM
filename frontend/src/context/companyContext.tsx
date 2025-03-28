@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface Company {
   id: number;
@@ -17,16 +17,16 @@ interface CompanyContextType {
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 const initialCompanies: Company[] = [
-  { id: 1, name: 'Sunfiber' },
-  { id: 2, name: 'Jyoti Trading' },
-  { id: 3, name: 'Laxmi Engineering' },
-  { id: 4, name: 'Pooja Engineering' },
-  { id: 5, name: 'The Blue Beast' },
-  { id: 6, name: 'V R Engineering' },
+  { id: 1, name: "Sunfiber" },
+  { id: 2, name: "Jyoti Trading" },
+  { id: 3, name: "Laxmi Engineering" },
+  { id: 4, name: "Pooja Engineering" },
+  { id: 5, name: "The Blue Beast" },
 ];
 
-// Create provider component
-export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
@@ -55,9 +55,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   return (
-    <CompanyContext.Provider value={value}>
-      {children}
-    </CompanyContext.Provider>
+    <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
   );
 };
 
@@ -65,7 +63,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
 export const useCompany = () => {
   const context = useContext(CompanyContext);
   if (context === undefined) {
-    throw new Error('useCompany must be used within a CompanyProvider');
+    throw new Error("useCompany must be used within a CompanyProvider");
   }
   return context;
 };

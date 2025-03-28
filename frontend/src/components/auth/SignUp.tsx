@@ -1,16 +1,18 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus } from "lucide-react";
 import axios from "axios";
 import { BACKEND_URL } from "../../backendUrl";
 
-const SignUp = () => {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [companyName, setCompanyName] = useState("");
+
+const SignUp: React.FC = () => {
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [companyName, setCompanyName] = useState<string>("");
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,7 +22,13 @@ const SignUp = () => {
       return;
     }
 
-    const newUser = { firstName, lastName, email, password, companyName };
+    const newUser = { 
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      companyName,
+    };
 
     try {
       const response = await axios.post(`${BACKEND_URL}/api/users/signup`, newUser);
@@ -29,7 +37,7 @@ const SignUp = () => {
         navigate("/login");
         alert("Account created successfully!");
       } else {
-        alert("there is error while login");
+        alert("There was an error during signup");
       }
     } catch (error) {
       alert("Something went wrong. Please try again later.");
@@ -113,6 +121,7 @@ const SignUp = () => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Confirm Password"
           />
+
           <input
             id="companyName"
             name="companyName"
@@ -122,6 +131,9 @@ const SignUp = () => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Company Name"
           />
+
+          {/* Creative Role Selection */}
+          
 
           <button
             type="submit"

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useCustomers, Customer } from "../../context/clientContext";
 import { useTransactions, Transaction } from "../../context/TransactionContext";
-import { FiClock, FiCalendar, FiMessageSquare, FiX, FiSend, FiChevronDown, FiUser, FiUsers } from 'react-icons/fi';
+import { FiClock, FiCalendar, FiMessageSquare, FiX, FiSend, FiChevronDown, FiUser, FiUsers, FiType } from 'react-icons/fi';
 import axios from 'axios';
 import { BACKEND_URL } from '../../backendUrl';
 import toast from 'react-hot-toast';
+
+
 
 interface ReminderModalProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ interface ReminderModalProps {
   onReminderAdded?: () => void;
 }
 
+
 const ReminderModal: React.FC<ReminderModalProps> = ({ 
   isOpen, 
   onClose, 
@@ -22,6 +25,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   onReminderAdded 
 }) => {
   const [message, setMessage] = useState<string>('');
+  const [subject, setSubject] = useState<string>("");
   const [date, setDate] = useState<string>('');
   const [time, setTime] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -91,6 +95,10 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       toast.error('Please enter a message');
       return;
     }
+    if (!subject) {
+      toast.error('Please enter a subject');
+      return;
+    }
     
     if (!date || !time) {
       toast.error('Please select date and time');
@@ -111,6 +119,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
         customerId: selectedCustomer.id,
         transactionId: selectedTransaction?.id || null,
         datetime: dateTime.toISOString(),
+        subject,
         message,
         recipient: reminderRecipient // Add recipient to the payload
       };
@@ -152,22 +161,28 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   const today = new Date().toISOString().split('T')[0];
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all animate-fadeIn">
-        <div className="bg-orange-500 px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden transform transition-all animate-fadeIn">
+        <div className="bg-orange-500 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
           <h2 className="text-white text-lg font-semibold flex items-center">
             <FiClock className="mr-2" />
             Create Reminder
           </h2>
           <button 
             onClick={onClose} 
-            className="text-white hover:bg-orange-600 rounded-full p-1 transition-colors"
+            className="text-white hover:bg-orange-600 rounded-full p-1 transition-colors absolute top-4 right-4"
           >
             <FiX size={20} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-4">
+        
+        {/* Scrollable Content */}
+        <form 
+          onSubmit={handleSubmit} 
+          className="flex-grow overflow-y-auto px-6 py-4 space-y-4 custom-scrollbar"
+        >
+          {/* Customer Dropdown */}
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Customer
             </label>
@@ -190,7 +205,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               </div>
               
               {showCustomerDropdown && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   <div className="p-2">
                     {customers && customers.length > 0 ? (
                       customers.map(customer => (
@@ -213,8 +228,12 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* Rest of the form remains the same... */}
+          
+          {/* Transaction Dropdown */}
           {selectedCustomer && (
-            <div className="mb-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Transaction (Optional)
               </label>
@@ -232,7 +251,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                 </div>
                 
                 {showTransactionDropdown && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     <div className="p-2">
                       {customerTransactions && customerTransactions.length > 0 ? (
                         customerTransactions.map(transaction => (
@@ -260,8 +279,28 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             </div>
           )}
 
-          {/* New Reminder Recipient Selection */}
-          <div className="mb-4">
+          {/* Subject Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 items-center">
+              <FiType className="mr-2 text-orange-500 inline" /> Email Subject
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Enter email subject"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 transition-all"
+                required
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FiMessageSquare />
+              </span>
+            </div>
+          </div>
+
+          {/* Reminder Recipient Selection */}
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Reminder Recipient
             </label>
@@ -302,7 +341,8 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             </div>
           </div>
 
-          <div className="mb-4">
+          {/* Message Textarea */}
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Reminder Message
             </label>
@@ -316,7 +356,8 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Date and Time */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <FiCalendar className="inline mr-1" /> Date
@@ -344,7 +385,8 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             </div>
           </div>
           
-          <div className="flex justify-end space-x-3">
+          {/* Action Buttons - Sticky at Bottom */}
+          <div className="bottom-0 bg-white  pt-4 pb-2 border-t border-gray-200 -mx-6 px-6 flex justify-end space-x-3 shadow-top">
             <button
               type="button"
               onClick={onClose}

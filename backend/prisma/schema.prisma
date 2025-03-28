@@ -11,19 +11,20 @@ model Company {
   id           String        @id @default(uuid())
   name         String        @unique
   industry     String
+  email        String?
   createdAt    DateTime      @default(now())
   customers    Customer[]
   transactions Transaction[]
 }
 
 model User {
-  id        String   @id @default(uuid())
-  firstName String
-  lastName  String
-  email     String   @unique
-  password  String
-  role      Role     @default(admin)
-  createdAt DateTime @default(now())
+  id               String    @id @default(uuid())
+  firstName        String
+  lastName         String
+  email            String    @unique
+  password         String
+  role             Role      @default(user)
+  createdAt        DateTime  @default(now())
 }
 
 model Customer {
@@ -33,25 +34,24 @@ model Customer {
   phone            String?
   createdAt        DateTime      @default(now())
   remark           String?
-  documents        Document[]
-  gst_no           Int           @default(0)
+  gst_no           String
   company_and_name String
   company          Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  documents        Document[]
   reminder         Reminder[]
   transactions     Transaction[]
 }
 
 model Document {
-  id         String   @id @default(uuid())
-  customerId String
-  fileName   String
-  filePath   String
+  id           String   @id @default(uuid())
+  customerId   String
+  fileName     String
+  filePath     String
   cloudinaryId String
-  fileType     String?  // Add this field to store the MIME type
-  fileSize     Int? 
-  uploadedAt DateTime @default(now())
-
-  customer   Customer @relation(fields: [customerId], references: [id])
+  uploadedAt   DateTime @default(now())
+  fileSize     Int?
+  fileType     String?
+  customer     Customer @relation(fields: [customerId], references: [id])
 }
 
 model Transaction {
@@ -76,16 +76,17 @@ model Reminder {
   message       String
   createdAt     DateTime     @default(now())
   transactionId String?
-  recipient     String       @default("company")
-  priority      String       @default("MEDIUM")
+  emailKey      String       @default("")
   status        String       @default("PENDING")
-  type          String       @default("EMAIL")
+  recipient     String       @default("company")
   customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+ 
 }
 
 enum Role {
   admin
+  user
 }
 
 enum TransactionStatus {

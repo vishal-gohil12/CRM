@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('admin');
+CREATE TYPE "Role" AS ENUM ('admin', 'user');
 
 -- CreateEnum
 CREATE TYPE "TransactionStatus" AS ENUM ('pending', 'completed', 'cancelled');
@@ -23,6 +23,8 @@ CREATE TABLE "User" (
     "password" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'admin',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "resetToken" TEXT,
+    "resetTokenExpiry" TIMESTAMP(3),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -35,7 +37,7 @@ CREATE TABLE "Customer" (
     "phone" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "remark" TEXT,
-    "gst_no" INTEGER NOT NULL DEFAULT 0,
+    "gst_no" TEXT NOT NULL,
     "company_and_name" TEXT NOT NULL,
 
     CONSTRAINT "Customer_pkey" PRIMARY KEY ("id")
@@ -49,6 +51,8 @@ CREATE TABLE "Document" (
     "filePath" TEXT NOT NULL,
     "cloudinaryId" TEXT NOT NULL,
     "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fileSize" INTEGER,
+    "fileType" TEXT,
 
     CONSTRAINT "Document_pkey" PRIMARY KEY ("id")
 );
@@ -79,6 +83,7 @@ CREATE TABLE "Reminder" (
     "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
     "status" TEXT NOT NULL DEFAULT 'PENDING',
     "type" TEXT NOT NULL DEFAULT 'EMAIL',
+    "recipient" TEXT NOT NULL DEFAULT 'company',
 
     CONSTRAINT "Reminder_pkey" PRIMARY KEY ("id")
 );

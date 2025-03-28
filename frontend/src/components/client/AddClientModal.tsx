@@ -26,7 +26,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     company_and_name: "",
     email: "",
     phone: "",
-    gst_no: 0,
+    gst_no: "",
     remark: "",
     documents: [] as string[],
     companyName: selectedCompany?.name || "",
@@ -58,9 +58,6 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       newErrors.phone = "Phone number must be 10 digits";
     }
 
-    if (isNaN(formData.gst_no) || formData.gst_no < 0) {
-      newErrors.gst_no = "GST must be a valid number";
-    }
     if (!formData.companyName) {
       newErrors.companyName = "Please select a company profile";
     }
@@ -194,12 +191,12 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 GST Number *
               </label>
               <input
-                type="number"
+                type="text"
                 value={formData.gst_no}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    gst_no: parseInt(e.target.value) || 0,
+                    gst_no: e.target.value,
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
