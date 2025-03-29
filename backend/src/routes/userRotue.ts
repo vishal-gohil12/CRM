@@ -29,20 +29,14 @@ const forgotPasswordOtp = new Map<string, { otp: string, expires: Date }>();
 
 userRoute.post('/user/signup', async (req, res) => {
     try {
-        const { firstName, lastName, email, password, role }: User = req.body;
-        console.log(firstName, lastName, email, password, role)
+        const { firstName, lastName, email, password }: User = req.body;
 
-        const adminExists = await prisma.user.findFirst();
+        const adminExists = await prisma.user.findFirst({ where: { email }});
         if (adminExists) {
             res.status(400).json({
                 status: false,
                 message: "Admin already exists. Only one admin is allowed."
             });
-            return;
-        }
-
-        if (role === 'admin') {
-            res.status(403).json({ message: "You cannot register as an admin!" });
             return;
         }
 
@@ -53,7 +47,6 @@ userRoute.post('/user/signup', async (req, res) => {
                 lastName,
                 email,
                 password: hashPassword,
-                role
             }
         });
 

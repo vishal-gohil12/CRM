@@ -11,7 +11,6 @@ const SignUp: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [companyName, setCompanyName] = useState<string>("");
 
   const navigate = useNavigate();
 
@@ -26,12 +25,11 @@ const SignUp: React.FC = () => {
       firstName, 
       lastName, 
       email, 
-      password, 
-      companyName,
+      password
     };
 
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/users/signup`, newUser);
+      const response = await axios.post(`${BACKEND_URL}/api/user/signup`, newUser);
 
       if (response.data.status) {
         navigate("/login");
@@ -121,19 +119,8 @@ const SignUp: React.FC = () => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
             placeholder="Confirm Password"
           />
-
-          <input
-            id="companyName"
-            name="companyName"
-            type="text"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Company Name"
-          />
-
           {/* Creative Role Selection */}
-          
+
 
           <button
             type="submit"
