@@ -7,19 +7,17 @@ export const companyRoute = Router();
 
 companyRoute.post('/add', async (req, res) => {
     try {
-        const { name, industry, email }: Company = req.body;
+        const { name, industry }: Company = req.body;
         const company = await prisma.company.create({
             data: {
                 name: name.toLocaleLowerCase(),
                 industry: industry,
-                email: email
             }
         });
 
         res.status(201).json({
             status: true,
-            company: company,
-            email: email
+            company: company
         });
     } catch (error: any) {
         res.status(500).json({
@@ -43,7 +41,6 @@ companyRoute.get('/all', authUser, async (req, res) => {
             id: company.id,
             name: company.name,
             industry: company.industry,
-            email: company.email,
             customers: company.customers,
             transactions: company.transactions
         }));

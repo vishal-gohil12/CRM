@@ -10,7 +10,6 @@ export type User = {
 export type Company = {
     name: string;
     industry: string;
-    email?: string;
 }
 
 export enum Role {
